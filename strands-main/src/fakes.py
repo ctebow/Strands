@@ -6,7 +6,7 @@ from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
 
 class Pos(PosBase):
     
-    def take_step(self, step: Step) -> "Pos":
+    def take_step(self, step: Step) -> "Pos": # should this be PosBase?
 
         c = self.c
         r = self.r
@@ -22,7 +22,7 @@ class Pos(PosBase):
 
         return Pos(r, c)
 
-    def step_to(self, other: "Pos") -> Step:
+    def step_to(self, other: "Pos") -> Step: # should this be PosBase?
 
         if self == other:
             raise ValueError
@@ -49,6 +49,14 @@ class Pos(PosBase):
             raise ValueError
     
     def is_adjacent_to(self, other: "Pos") -> bool:
+
+        # this is an interesting alternative - what do you think?
+        # try:
+        #     self.step_to(other)
+        #     return True
+
+        # except ValueError:
+        #     return False
 
         r_dist = self.r - other.r
         c_dist = self.c - other.c
@@ -84,6 +92,8 @@ class BoardFake(BoardBase):
     # milestone one said to not check if letters is valid,
     # didn't see until after I added this, we could take 
     # the checking part out if its unecessary for now
+
+    # i think as long as we comment above it its fine
     def __init__(self, letters: list[list[str]]):
 
         row_size = len(letters[0])
@@ -101,7 +111,7 @@ class BoardFake(BoardBase):
         
         self.letters = letters
 
-    # make properties?      
+    # make properties - probs not?      
     def num_rows(self) -> int:
         return len(self.letters)
     
@@ -110,7 +120,10 @@ class BoardFake(BoardBase):
     
     def get_letter(self, pos: Pos) -> str:
         
-        if pos.r > self.num_rows() or pos.c > self.num_cols():
+        # converting to 0-indexing
+        if pos.r > self.num_rows() - 1 or pos.c > self.num_cols() - 1:
+            raise ValueError
+        elif pos.r < 0 or pos.c < 0:
             raise ValueError
         
         return self.letters[pos.r][pos.c]
@@ -120,6 +133,3 @@ class BoardFake(BoardBase):
 
 class StrandsGameFake(StrandsGameBase):
     ...
-    
-
-# TODO: Define these four classes
