@@ -5,8 +5,14 @@ Pos, StrandFake, BoardFake, StrandsGameFake
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
 
 class Pos(PosBase):
-    
-    def take_step(self, step: Step) -> "Pos": # should this be PosBase?
+    """
+    Positions on a board, represented as pairs of 0-indexed
+    row and column integers. Position (0, 0) corresponds to
+    the top-left corner of a board, and row and column
+    indices increase down and to the right, respectively.
+    """
+
+    def take_step(self, step: Step) -> PosBase:
 
         c = self.c
         r = self.r
@@ -22,7 +28,7 @@ class Pos(PosBase):
 
         return Pos(r, c)
 
-    def step_to(self, other: "Pos") -> Step: # should this be PosBase?
+    def step_to(self, other: PosBase) -> Step:
 
         if self == other:
             raise ValueError
@@ -42,13 +48,12 @@ class Pos(PosBase):
                 step += "e"
             elif c_dist == 1:
                 step += "w"
-        
+
             return Step(step)
 
-        else:
-            raise ValueError
-    
-    def is_adjacent_to(self, other: "Pos") -> bool:
+        raise ValueError
+
+    def is_adjacent_to(self, other: PosBase) -> bool:
 
         try:
             self.step_to(other)
@@ -56,10 +61,14 @@ class Pos(PosBase):
 
         except ValueError:
             return False
-        
+
 class StrandFake(StrandBase):
-    
-    def positions(self) -> list[Pos]:
+    """
+    Strands, represented as a start position
+    followed by a sequence of steps.
+    """
+
+    def positions(self) -> list[PosBase]:
 
         stack = []
         stack.append(self.start)
@@ -69,19 +78,23 @@ class StrandFake(StrandBase):
             pos = stack.pop().take_step(step)
             stack.append(pos)
             position_list.append(pos)
-        
+
         return position_list
-    
+
     def is_cyclic(self) -> bool:
         raise NotImplementedError
-    
+
     def is_folded(self) -> bool:
         raise NotImplementedError
 
 class BoardFake(BoardBase):
+    """
+    Boards for the Strands game, consisting of a
+    rectangular grid of letters.
+    """
 
     # milestone one said to not check if letters is valid,
-    # didn't see until after I added this, we could take 
+    # didn't see until after I added this, we could take
     # the checking part out if its unecessary for now
 
     # i think as long as we comment above it its fine
@@ -99,37 +112,40 @@ class BoardFake(BoardBase):
                     raise ValueError
                 if not letter.isalpha() or not letter.islower():
                     raise ValueError
-        
+
         self.letters = letters
 
-    # make properties - probs not?      
+    # make properties - probs not?
     def num_rows(self) -> int:
         return len(self.letters)
-    
+
     def num_cols(self) -> int:
         return len(self.letters[0])
-    
-    def get_letter(self, pos: Pos) -> str:
-        
+
+    def get_letter(self, pos: PosBase) -> str:
+
         # converting to 0-indexing
         if pos.r > self.num_rows() - 1 or pos.c > self.num_cols() - 1:
             raise ValueError
-        elif pos.r < 0 or pos.c < 0:
+        if pos.r < 0 or pos.c < 0:
             raise ValueError
-        
+
         return self.letters[pos.r][pos.c]
-    
-    def evaluate_strand(self, strand: StrandFake) -> str:
+
+    def evaluate_strand(self, strand: StrandBase) -> str:
         raise NotImplementedError
 
-class StrandsGameFake(StrandsGameBase): # add extension back at the end from StrandsGameBase
+class StrandsGameFake(StrandsGameBase):
+    """
+    Incomplete base class for Strands game logic.
+    """
 
     game_theme: str
     hint_thresh: int
     game_board: list[list[str]]
     game_answers: list[tuple[str, StrandFake]]
-    tot_game_guesses: list[tuple[str, StrandFake]] # biggest issue is it currently does not 
-                                                   # include strand guesses, since 
+    tot_game_guesses: list[tuple[str, StrandFake]] # biggest issue is it currently does not
+                                                   # include strand guesses, since
                                                    # dictionary not implmeneted
     hint_state: None | bool
     hint_word: str
@@ -155,7 +171,7 @@ class StrandsGameFake(StrandsGameBase): # add extension back at the end from Str
             if r == "":
                 board_stp = ind + 3
                 break
-            
+
             alph_lst = [alph.lower() for alph in r.split()]
             board_lst.append(alph_lst)
 
@@ -187,7 +203,7 @@ class StrandsGameFake(StrandsGameBase): # add extension back at the end from Str
 
     def board(self) -> BoardBase:
         return BoardFake(self.game_board)
-    
+
     def answers(self) -> list[tuple[str, StrandBase]]:
         return self.game_answers
 
@@ -199,19 +215,19 @@ class StrandsGameFake(StrandsGameBase): # add extension back at the end from Str
                 if gus_word == ans_word:
                     # appends desired ans_strd, even if different from guess
                     found_strands.append(ans_strd)
-                    
+
         return found_strands
-    
+
     def game_over(self) -> bool:
 
         if len(self.found_strands()) == len(self.answers()):
             return True
-        
+
         return False
 
     def hint_threshold(self) -> int:
         return self.hint_thresh
-    
+
     def hint_meter(self) -> int:
         level = len(self.new_game_guesses)
         if level >= self.hint_threshold():
@@ -233,6 +249,8 @@ class StrandsGameFake(StrandsGameBase): # add extension back at the end from Str
                 self.hint_word = word
                 return (i, self.hint_state)
 
+        return None
+
     def submit_strand(self, strand: StrandBase) -> tuple[str, bool] | str:
 
         pos = strand.start
@@ -242,7 +260,7 @@ class StrandsGameFake(StrandsGameBase): # add extension back at the end from Str
             self.board().get_letter(pos)
         except ValueError:
             return "Not a theme word"
-        
+
         for word, strd in self.answers():
             if word[0] == self.game_board[pos.r][pos.c]:
                 if strd not in self.found_strands():
@@ -255,9 +273,9 @@ class StrandsGameFake(StrandsGameBase): # add extension back at the end from Str
                         self.new_game_guesses = []
 
                     return (word, True)
-                else:
-                    return "Already found"
-        
+
+                return "Already found"
+
         return "Not a theme word"
 
     def use_hint(self) -> tuple[int, bool] | str:
@@ -265,13 +283,20 @@ class StrandsGameFake(StrandsGameBase): # add extension back at the end from Str
         if self.active_hint() is None:
             # next step in active_hint
             self.hint_state = False
-            return self.active_hint()
 
-        assert self.active_hint() is not None
-        _, cond = self.active_hint()
+            new_active = self.active_hint()
+            assert new_active is not None
+            return new_active
+
+        intermediate = self.active_hint()
+        assert intermediate is not None
+        _, cond = intermediate
         if cond is False:
             # next step in active_hint
             self.hint_state = True
-            return self.active_hint()
-        else:
-            return "Use your current hint"
+
+            new_active = self.active_hint()
+            assert new_active is not None
+            return new_active
+
+        return "Use your current hint"
