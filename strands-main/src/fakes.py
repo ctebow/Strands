@@ -36,8 +36,7 @@ class Pos(PosBase):
         r_dist = self.r - other.r
         c_dist = self.c - other.c
 
-        if abs(r_dist) < 2 and abs(c_dist) < 2: # instructions said two steps??
-                                                # i think they mean like NW or SE
+        if abs(r_dist) < 2 and abs(c_dist) < 2:
             step = ""
 
             if r_dist == -1:
@@ -93,11 +92,7 @@ class BoardFake(BoardBase):
     rectangular grid of letters.
     """
 
-    # milestone one said to not check if letters is valid,
-    # didn't see until after I added this, we could take
-    # the checking part out if its unecessary for now
-
-    # i think as long as we comment above it its fine
+    # accidently implemented check if letters valid
     def __init__(self, letters: list[list[str]]):
 
         row_size = len(letters[0])
@@ -115,7 +110,6 @@ class BoardFake(BoardBase):
 
         self.letters = letters
 
-    # make properties - probs not?
     def num_rows(self) -> int:
         return len(self.letters)
 
@@ -160,7 +154,6 @@ class StrandsGameFake(StrandsGameBase):
         else:
             lines_lst = [line.strip() for line in game_file]
 
-        # print(lines_lst)
         self.game_theme = lines_lst[0]
         self.hint_thresh = hint_threshold
 
