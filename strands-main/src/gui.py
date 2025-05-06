@@ -2,12 +2,12 @@
 GUI Implementation for Milestone 1:
 Pos, StrandFake, BoardFake, StrandsGameFake
 """
+import sys
+import pygame
+
 from stubs import PosStub, StrandStub, BoardStub, StrandsGameStub
 from ui import ArtGUIBase, ArtGUIStub
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
-
-import pygame
-import sys
 
 
 WINDOW_WIDTH = 300  # need to adjust so responds dynamically to fit words
@@ -38,12 +38,12 @@ class GuiStrands:
     interior_wdth: float
     row_height: float
     col_width: float
-    circles: list[dict[tuple[int, int], int]]
+    circles: list[dict[tuple[float, float], float]]
     game: StrandsGameBase
 
     # dictionary where key is index position of letter, value is a tuple of the pixel
     # position as well as the (img_width, img_height) for that letter
-    lett_locs = list[dict[tuple[int, int]], tuple[tuple[float, float], tuple[float, float]]]
+    lett_locs: list[dict[tuple[int, int], tuple[tuple[float, float], tuple[int, int]]]]
 
     # list of active lines, a list of tuples containing start and end positions
     lines: list[tuple[tuple[float, float], tuple[float, float]]]
@@ -103,8 +103,10 @@ class GuiStrands:
                         sys.exit()
 
                     elif event.key == pygame.K_RETURN:
-                        self.game.submit_strand(StrandStub((0, 0), []))
-                        
+                        # temporary arbitrary StrandStub assignment
+                        dummy_strd: StrandBase = StrandStub(PosStub(0, 0), [Step("n")])
+                        self.game.submit_strand(dummy_strd)
+
                         self.append_found_solutions(self.col_width / 2)
                         return_count += 1
 
@@ -132,11 +134,11 @@ class GuiStrands:
 
             pygame.draw.line(self.surface, color=line_color,
                          start_pos=loc_1, end_pos=loc_2, width=LINE_WIDTH)
-            
+
         # draw background circles, if applicable
         for circle in self.circles:
-            pos_key: tuple[int, int] = list(circle.keys())[0]
-            rad: int = circle[pos_key]
+            pos_key: tuple[float, float] = list(circle.keys())[0]
+            rad: float = circle[pos_key]
 
             # Choosing one new color for all circles
             color: tuple[int, int, int] = (173, 216, 230)
@@ -144,7 +146,7 @@ class GuiStrands:
             # Use pygame.draw.circle to draw a circle with its stored radius
             pygame.draw.circle(self.surface, color=color,
                             center=pos_key, radius=rad)
-            
+
         # showing letters and bottom
         self.display_game_board()
 
@@ -160,7 +162,7 @@ class GuiStrands:
         font: pygame.font.Font = pygame.font.Font("assets/thisprty.ttf", 24)
         msg_color = (0, 0, 0)
 
-        board = self.game.board()
+        board: BoardBase = self.game.board()
         row_nums = board.num_rows()
         col_nums = board.num_cols()
 
@@ -181,6 +183,8 @@ class GuiStrands:
             for c_ind, col in enumerate(row):
                 msg = col
                 text_image: pygame.Surface = font.render(msg, True, msg_color)
+
+                # methods from official Pygame documentation
                 img_width = text_image.get_width()
                 img_height = text_image.get_height()
 
@@ -198,17 +202,17 @@ class GuiStrands:
                 x_counter += 1
 
                 # creating dictionary that assigns one location uniquely to every letter
-                if self.lett_locs == []:
+                if not self.lett_locs:
                     inner_locs[(r_ind, c_ind)] = (location, (img_width, img_height))
 
             y_counter += 1
 
             # ensures aren't building list every time
-            if self.lett_locs == []:
+            if not self.lett_locs:
                 outer_locs.append(inner_locs)
-        
+
         # ensures we are not updating attribute every time
-        if self.lett_locs == []:
+        if not self.lett_locs:
             self.lett_locs = outer_locs
 
         self.display_bottom(y_counter)
@@ -224,7 +228,10 @@ class GuiStrands:
         font: pygame.font.Font = pygame.font.Font("assets/thisprty.ttf", 24)
         msg_color = (0, 0, 0)
 
-        bottom_msg = f"Found {num_found}/{tot_num}; Hint Once {self.game.hint_meter()}/{self.game.hint_threshold()}"
+        bottom_msg = (
+            f"Found {num_found}/{tot_num}; "
+            f"Hint Once {self.game.hint_meter()}/{self.game.hint_threshold()}"
+        )
 
         text_image: pygame.Surface = font.render(bottom_msg, True, msg_color)
         img_width = text_image.get_width()
@@ -247,7 +254,6 @@ class GuiStrands:
         """
         self.lines.append((loc_1, loc_2))
 
-        
     def append_found_solutions(self, width) -> None:
         """
         Responsible for appending to the overall circle list before they
@@ -279,7 +285,7 @@ class GuiStrands:
                     # changing tracking of last point always
                     last_center = center
 
-                    rad = width / 2
+                    rad: float = width / 2
                     self.circles.append({center: rad})
                     break
 
