@@ -17,6 +17,7 @@ class Pos(PosBase):
         c = self.c
         r = self.r
 
+        # value method from official python website Enum documentation
         if "w" in step.value:
             c -= 1
         if "n" in step.value:
@@ -48,6 +49,7 @@ class Pos(PosBase):
             elif c_dist == 1:
                 step += "w"
 
+            # from official python website Enum documentation
             return Step(step)
 
         raise ValueError
