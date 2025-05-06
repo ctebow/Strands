@@ -45,6 +45,9 @@ class GuiStrands:
     # position as well as the (img_width, img_height) for that letter
     lett_locs = list[dict[tuple[int, int]], tuple[tuple[float, float], tuple[float, float]]]
 
+    # list of active lines, a list of tuples containing start and end positions
+    lines: list[tuple[tuple[float, float], tuple[float, float]]]
+
     def __init__(self) -> None:
         """
         Initializes the GUI application.
@@ -66,6 +69,9 @@ class GuiStrands:
 
         # List of dictionaries to store the positions and radius of the circle
         self.circles = []
+
+        # similar for lines but stores tuples of start and end tuple positions
+        self.lines = []
 
         # run event loop
         self.run_event_loop()
@@ -120,6 +126,13 @@ class GuiStrands:
         # draws the yellow interior onto grey background
         self.surface.blit(interior, (FRAME_WIDTH, FRAME_WIDTH))
 
+        # actually drawing the lines
+        for loc_1, loc_2 in self.lines:
+            line_color: tuple[int, int, int] = (173, 216, 230)
+
+            pygame.draw.line(self.surface, color=line_color,
+                         start_pos=loc_1, end_pos=loc_2, width=LINE_WIDTH)
+            
         # draw background circles, if applicable
         for circle in self.circles:
             pos_key: tuple[int, int] = list(circle.keys())[0]
@@ -197,8 +210,6 @@ class GuiStrands:
         # ensures we are not updating attribute every time
         if self.lett_locs == []:
             self.lett_locs = outer_locs
-        
-        # print(self.lett_locs)
 
         self.display_bottom(y_counter)
 
@@ -229,20 +240,18 @@ class GuiStrands:
         location = (x_loc, y_loc)
         self.surface.blit(text_image, location)
 
-    def draw_line_between(self, loc_1: tuple[float, float], loc_2: tuple[float, float]) -> None:
+    def append_line_between(self, loc_1: tuple[float, float], loc_2: tuple[float, float]) -> None:
         """
-        Given two locations , draw a think line between these
-        locations. This will serve to associate strands.
+        Given two locations, save a line between these
+        locations for later. This will serve to associate strands.
         """
-        line_color: tuple[int, int, int] = (0, 0, 0)
+        self.lines.append((loc_1, loc_2))
 
-        pygame.draw.line(self.surface, color=line_color,
-                         start_pos=loc_1, end_pos=loc_2, width=LINE_WIDTH)
         
     def append_found_solutions(self, width) -> None:
         """
         Responsible for appending to the overall circle list before they
-        will be drawn.
+        will be drawn. Currently called once per hitting return.
         """
         # gets appended as you hit space
         found_lst = self.game.found_strands()
@@ -251,16 +260,28 @@ class GuiStrands:
         new_strd = found_lst[-1]
         asw_locations = new_strd.positions()
 
+        last_center = None
         for pos in asw_locations: # could maybe draw strands here
             pt = (pos.r, pos.c)
+
             for dct in self.lett_locs:
                 if pt in dct.keys():
                     (x_loc, y_loc), (img_width, img_height) = dct[pt]
                     x_cent = x_loc + img_width / 2
                     y_cent = y_loc + img_height / 2
                     center = (x_cent, y_cent)
+
+                    # drawing a connection between every two points
+                    # in a theme word
+                    if last_center is not None:
+                        self.append_line_between(last_center, center)
+
+                    # changing tracking of last point always
+                    last_center = center
+
                     rad = width / 2
                     self.circles.append({center: rad})
+                    break
 
 if __name__ == "__main__":
     GuiStrands()
