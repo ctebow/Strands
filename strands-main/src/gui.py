@@ -36,6 +36,8 @@ class GuiStrands:
     interior_hght: float
     interior_wdth: float
     row_height: float
+    col_width: float
+    lett_locs = list[dict[str, tuple[int, int]]]
 
     def __init__(self) -> None:
         """
@@ -53,6 +55,8 @@ class GuiStrands:
         self.interior_hght = WINDOW_HEIGHT - 2 * FRAME_WIDTH
         self.interior_wdth = WINDOW_WIDTH - 2 * FRAME_WIDTH
         self.row_height = self.interior_hght / (board.num_rows() + 1)
+        self.col_width = self.interior_wdth / (board.num_cols())
+        self.lett_locs = []
 
         # run event loop
         self.run_event_loop()
@@ -66,6 +70,7 @@ class GuiStrands:
             2. If there are any new events, process the events.
             3. Re-draw the window
         """
+        return_count = 0
         while True:
             events = pygame.event.get()
 
@@ -82,6 +87,13 @@ class GuiStrands:
                         pygame.quit()
                         sys.exit()
 
+                    elif event.key == pygame.K_RETURN:
+                        if return_count == 5:
+                            raise ValueError("Game is already over!")
+                        
+                        self.draw_found_solutions(return_count)
+                        return_count += 1
+
             # shows application window
             self.draw_window()
 
@@ -94,10 +106,7 @@ class GuiStrands:
         frame: ArtGUIBase = ArtGUIStub(FRAME_WIDTH)
         frame.draw_background(self.surface)
 
-        interior_wdth = WINDOW_WIDTH - 2 * FRAME_WIDTH
-        interior_hght = WINDOW_HEIGHT - 2 * FRAME_WIDTH
-
-        interior = pygame.Surface((interior_wdth, interior_hght))
+        interior = pygame.Surface((self.interior_wdth, self.interior_hght))
         interior.fill((253, 253, 150))
 
         # draws the yellow interior onto grey background
@@ -118,37 +127,63 @@ class GuiStrands:
 
         game: StrandsGameBase = StrandsGameStub("", 0)
         board = game.board()
+        row_nums = board.num_rows()
+        col_nums = board.num_cols()
 
         outer = []
-        for r in range(board.num_rows()):
+        for r in range(row_nums):
             inner = []
-            for c in range(board.num_cols()):
+            for c in range(col_nums):
                 pos: PosBase = PosStub(r, c)
                 inner.append(board.get_letter(pos))
 
             outer.append(inner)
 
-        counter = 1
-
+        y_counter = 1
+        outer_locs = []
+        lett_track = {}
         for row in outer:
-            msg = "   ".join(row)
-            text_image: pygame.Surface = font.render(msg, True, msg_color)
-            img_width = text_image.get_width()
-            img_height = text_image.get_height()
+            x_counter = 1
+            inner_locs = {}
+            for col in row:
+                msg = col
+                text_image: pygame.Surface = font.render(msg, True, msg_color)
+                img_width = text_image.get_width()
+                img_height = text_image.get_height()
 
-            assert self.interior_wdth > img_width
-            x_loc = FRAME_WIDTH + (self.interior_wdth - img_width) / 2
+                assert self.interior_wdth > img_width
+                x_gap = (self.col_width - img_width) / 2
+                x_loc = FRAME_WIDTH + x_counter * self.col_width - (img_width + x_gap)
 
-            assert self.row_height > img_height
-            gap = (self.row_height - img_height) / 2
-            y_loc = FRAME_WIDTH + counter * self.row_height - (img_height + gap)
+                assert self.row_height > img_height
+                y_gap = (self.row_height - img_height) / 2
+                y_loc = FRAME_WIDTH + y_counter * self.row_height - (img_height + y_gap)
 
-            location = (x_loc, y_loc)
-            self.surface.blit(text_image, location)
+                location = (x_loc, y_loc)
+                self.surface.blit(text_image, location)
 
-            counter += 1
+                x_counter += 1
 
-        self.display_bottom(game, counter)
+                # creating dictionary that assigns one location uniquely to every letter
+                if self.lett_locs == []:
+                    freq = lett_track.get(msg, 1)
+                    ky = f"{msg}_{freq}"
+                    inner_locs[ky] = location
+                    lett_track[msg] = freq + 1
+
+            y_counter += 1
+
+            # ensures aren't building list every time
+            if self.lett_locs == []:
+                outer_locs.append(inner_locs)
+        
+        # ensures we are not updating attribute every time
+        if self.lett_locs == []:
+            self.lett_locs = outer_locs
+        
+        print(self.lett_locs)
+
+        self.display_bottom(game, y_counter)
 
     def display_bottom(self, game: StrandsGameBase, counter: int) -> None:
         """
@@ -176,6 +211,19 @@ class GuiStrands:
 
         location = (x_loc, y_loc)
         self.surface.blit(text_image, location)
+
+    def draw_found_solutions(self, counter) -> None:
+        """
+        Responsible for drawing circles and connections between successfully
+        identified key words.
+        """
+        new_strd = StrandStub(PosBase(0, 0), [])
+        
+        locations = new_strd.positions()
+
+        for ans_pos in StrandStub.all_positions[counter]:
+
+
 
 if __name__ == "__main__":
     GuiStrands()
