@@ -13,6 +13,7 @@ import sys
 WINDOW_WIDTH = 300  # need to adjust so responds dynamically to fit words
 WINDOW_HEIGHT = 200 # need to adjust so responds dynamically to fit words
 FRAME_WIDTH = 20
+LINE_WIDTH = 5
 
 class GuiStrands:
     """
@@ -37,16 +38,21 @@ class GuiStrands:
     interior_wdth: float
     row_height: float
     col_width: float
-    lett_locs = list[dict[str, tuple[int, int]]]
+    circles: list[dict[tuple[int, int], int]]
+    game: StrandsGameBase
+
+    # dictionary where key is index position of letter, value is a tuple of the pixel
+    # position as well as the (img_width, img_height) for that letter
+    lett_locs = list[dict[tuple[int, int]], tuple[tuple[float, float], tuple[float, float]]]
 
     def __init__(self) -> None:
         """
         Initializes the GUI application.
         """
         pygame.init()
-        game: StrandsGameBase = StrandsGameStub("", 0)
-        board = game.board()
-        pygame.display.set_caption(game.theme())
+        self.game: StrandsGameBase = StrandsGameStub("", 0)
+        board = self.game.board()
+        pygame.display.set_caption(self.game.theme())
 
         # open application window
         self.surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -57,6 +63,9 @@ class GuiStrands:
         self.row_height = self.interior_hght / (board.num_rows() + 1)
         self.col_width = self.interior_wdth / (board.num_cols())
         self.lett_locs = []
+
+        # List of dictionaries to store the positions and radius of the circle
+        self.circles = []
 
         # run event loop
         self.run_event_loop()
@@ -88,10 +97,9 @@ class GuiStrands:
                         sys.exit()
 
                     elif event.key == pygame.K_RETURN:
-                        if return_count == 5:
-                            raise ValueError("Game is already over!")
+                        self.game.submit_strand(StrandStub((0, 0), []))
                         
-                        self.draw_found_solutions(return_count)
+                        self.append_found_solutions(self.col_width / 2)
                         return_count += 1
 
             # shows application window
@@ -111,6 +119,20 @@ class GuiStrands:
 
         # draws the yellow interior onto grey background
         self.surface.blit(interior, (FRAME_WIDTH, FRAME_WIDTH))
+
+        # draw background circles, if applicable
+        for circle in self.circles:
+            pos_key: tuple[int, int] = list(circle.keys())[0]
+            rad: int = circle[pos_key]
+
+            # Choosing one new color for all circles
+            color: tuple[int, int, int] = (173, 216, 230)
+
+            # Use pygame.draw.circle to draw a circle with its stored radius
+            pygame.draw.circle(self.surface, color=color,
+                            center=pos_key, radius=rad)
+            
+        # showing letters and bottom
         self.display_game_board()
 
         # Instruct PyGame to actually refresh the window with
@@ -125,8 +147,7 @@ class GuiStrands:
         font: pygame.font.Font = pygame.font.Font("assets/thisprty.ttf", 24)
         msg_color = (0, 0, 0)
 
-        game: StrandsGameBase = StrandsGameStub("", 0)
-        board = game.board()
+        board = self.game.board()
         row_nums = board.num_rows()
         col_nums = board.num_cols()
 
@@ -141,11 +162,10 @@ class GuiStrands:
 
         y_counter = 1
         outer_locs = []
-        lett_track = {}
-        for row in outer:
+        for r_ind, row in enumerate(outer):
             x_counter = 1
             inner_locs = {}
-            for col in row:
+            for c_ind, col in enumerate(row):
                 msg = col
                 text_image: pygame.Surface = font.render(msg, True, msg_color)
                 img_width = text_image.get_width()
@@ -166,10 +186,7 @@ class GuiStrands:
 
                 # creating dictionary that assigns one location uniquely to every letter
                 if self.lett_locs == []:
-                    freq = lett_track.get(msg, 1)
-                    ky = f"{msg}_{freq}"
-                    inner_locs[ky] = location
-                    lett_track[msg] = freq + 1
+                    inner_locs[(r_ind, c_ind)] = (location, (img_width, img_height))
 
             y_counter += 1
 
@@ -181,22 +198,22 @@ class GuiStrands:
         if self.lett_locs == []:
             self.lett_locs = outer_locs
         
-        print(self.lett_locs)
+        # print(self.lett_locs)
 
-        self.display_bottom(game, y_counter)
+        self.display_bottom(y_counter)
 
-    def display_bottom(self, game: StrandsGameBase, counter: int) -> None:
+    def display_bottom(self, counter: int) -> None:
         """
         Prepare and display bottom messages, which track the theme
         words found and the hint meter progress.
         """
-        num_found = len(game.found_strands())
-        tot_num = len(game.answers())
+        num_found = len(self.game.found_strands())
+        tot_num = len(self.game.answers())
 
         font: pygame.font.Font = pygame.font.Font("assets/thisprty.ttf", 24)
         msg_color = (0, 0, 0)
 
-        bottom_msg = f"Found {num_found}/{tot_num}; Hint Once {game.hint_meter()}/{game.hint_threshold()}"
+        bottom_msg = f"Found {num_found}/{tot_num}; Hint Once {self.game.hint_meter()}/{self.game.hint_threshold()}"
 
         text_image: pygame.Surface = font.render(bottom_msg, True, msg_color)
         img_width = text_image.get_width()
@@ -212,18 +229,38 @@ class GuiStrands:
         location = (x_loc, y_loc)
         self.surface.blit(text_image, location)
 
-    def draw_found_solutions(self, counter) -> None:
+    def draw_line_between(self, loc_1: tuple[float, float], loc_2: tuple[float, float]) -> None:
         """
-        Responsible for drawing circles and connections between successfully
-        identified key words.
+        Given two locations , draw a think line between these
+        locations. This will serve to associate strands.
         """
-        new_strd = StrandStub(PosBase(0, 0), [])
+        line_color: tuple[int, int, int] = (0, 0, 0)
+
+        pygame.draw.line(self.surface, color=line_color,
+                         start_pos=loc_1, end_pos=loc_2, width=LINE_WIDTH)
         
-        locations = new_strd.positions()
+    def append_found_solutions(self, width) -> None:
+        """
+        Responsible for appending to the overall circle list before they
+        will be drawn.
+        """
+        # gets appended as you hit space
+        found_lst = self.game.found_strands()
 
-        for ans_pos in StrandStub.all_positions[counter]:
+        # want newest strand appended to list
+        new_strd = found_lst[-1]
+        asw_locations = new_strd.positions()
 
-
+        for pos in asw_locations: # could maybe draw strands here
+            pt = (pos.r, pos.c)
+            for dct in self.lett_locs:
+                if pt in dct.keys():
+                    (x_loc, y_loc), (img_width, img_height) = dct[pt]
+                    x_cent = x_loc + img_width / 2
+                    y_cent = y_loc + img_height / 2
+                    center = (x_cent, y_cent)
+                    rad = width / 2
+                    self.circles.append({center: rad})
 
 if __name__ == "__main__":
     GuiStrands()
