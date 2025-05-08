@@ -1,4 +1,4 @@
-from base import PosBase, StrandBase, BoardBase, StrandsGameBase
+from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
 
 
 class Pos(PosBase):

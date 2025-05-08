@@ -89,6 +89,34 @@ def test_load_game_cs_142_txt() -> None:
     assert game.board().num_rows() == 3
     assert game.board().num_cols() == 5
 
+def test_load_game_cs_142_variations() -> None:
+    variants = [
+        """"CS 142"
+C S M C T
+O F O R Y
+N E O W T
+cmsc 1 4 w w w
+one 2 1 s e
+forty 2 2 e e ne s
+two 3 5 w w
+        """,
+        """"CS 142"
+  C S M C T  
+  O F O R Y
+  N E O W T
+cmsc 1 4 w  w w
+  one 2 1  s e
+FORTY 2 2 e e ne s
+TWO 3 5 w w
+        """,
+    ]
+    for txt in variants:
+        game = StrandsGameFake(txt.strip().splitlines())
+        assert game.theme().lower() == '"cs 142"'
+        assert game.board().num_rows() == 3
+        assert game.board().num_cols() == 5
+        assert len(game.answers()) == 4
+
 def test_load_game_cs_142_invalid() -> None:
     bad_variants = [
         """"CS 142"
@@ -113,3 +141,33 @@ cmsc 2 4 w w w
     for txt in bad_variants:
         with pytest.raises(ValueError):
             StrandsGameFake(txt.splitlines())
+
+def test_play_game_cs_142_once() -> None:
+    game = StrandsGameFake("boards/cs-142.txt")
+    assert game.submit_strand(StrandFake(Pos(0, 3), [])) == ("cmsc", True)
+    assert game.submit_strand(StrandFake(Pos(1, 0), [])) == ("one", True)
+    assert game.submit_strand(StrandFake(Pos(1, 1), [])) == ("forty", True)
+    assert game.submit_strand(StrandFake(Pos(2, 4), [])) == ("two", True)
+    assert game.game_over()
+
+
+def test_play_game_cs_142_twice() -> None:
+    game = StrandsGameFake("boards/cs-142.txt")
+    game.submit_strand(StrandFake(Pos(1, 1), []))
+    game.submit_strand(StrandFake(Pos(2, 4), []))
+    game.submit_strand(StrandFake(Pos(0, 3), []))
+    game.submit_strand(StrandFake(Pos(1, 0), []))
+    assert game.game_over()
+
+
+def test_play_game_cs_142_more() -> None:
+    game = StrandsGameFake("boards/cs-142.txt")
+    assert game.use_hint() == (0, False)
+    assert game.use_hint() == (0, True)
+    assert game.use_hint() == "Use your current hint"
+    assert game.submit_strand(StrandFake(Pos(0, 3), [])) == ("cmsc", True)
+    assert game.submit_strand(StrandFake(Pos(1, 0), [])) == ("one", True)
+    assert game.use_hint() == (2, False)
+    assert game.submit_strand(StrandFake(Pos(1, 1), [])) == ("forty", True)
+    assert game.submit_strand(StrandFake(Pos(2, 4), [])) == ("two", True)
+    assert game.game_over()

@@ -6,7 +6,7 @@ import tty
 from time import sleep
 from typing import List
 from ui import ArtTUIStub, ArtTUIBase
-from strands import StrandsGameStub, StrandsGameBase, StrandStub
+from base import StrandsGameBase, StrandsGameBase
 from colorama import Fore, Style, init
 
 

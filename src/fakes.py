@@ -135,7 +135,6 @@ class StrandsGameFake(StrandsGameBase):
     """
     Incomplete base class for Strands game logic.
     """
-
     game_theme: str
     hint_thresh: int
     game_board: list[list[str]]
