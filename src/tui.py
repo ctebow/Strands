@@ -4,7 +4,8 @@ import sys
 from time import sleep
 from typing import List
 from ui import ArtTUIStub, ArtTUIBase
-from base import StrandsGameBase, StrandsGameBase
+from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
+from stubs import PosStub, StrandStub, BoardStub, StrandsGameStub
 from colorama import Fore, Style, init
 
 
@@ -30,17 +31,17 @@ class TUI:
 
         # Theme display
         self.art.print_left_bar()
-        print(f"Theme: {self.game.get_theme()}", end="")
+        print(f"Theme: {self.game.theme()}", end="")
         self.art.print_right_bar()
 
         # Hint meter
         self.art.print_left_bar()
-        print(f"Hint meter: {self.game.get_hint_meter()}", end="")
+        print(f"Hint meter: {self.game.hint_threshold()}", end="")
         self.art.print_right_bar()
 
         # Progress
         self.art.print_left_bar()
-        print(f"Found: {len(self.game.get_found_strands())}/{self.game.get_theme_strands_required()}", end="")
+        print(f"Found: {len(self.game.found_strands())}/{len(self.game.answers())}", end="")
         self.art.print_right_bar()
 
         # Blank line
@@ -49,13 +50,25 @@ class TUI:
         self.art.print_right_bar()
 
         # Board display
-        found_positions = {pos for strand in self.game.get_found_strands()
-                           for pos in strand.get_path()}
-        board = self.game.get_board()
-        for row in board:
+        found_positions = [strand.positions() for strand in self.game.found_strands()]
+
+        board = self.game.board()
+        row_nums = board.num_rows()
+        col_nums = board.num_cols()
+
+        outer = []
+        for r in range(row_nums):
+            inner = []
+            for c in range(col_nums):
+                pos: PosBase = PosStub(r, c)
+                inner.append(board.get_letter(pos))
+
+            outer.append(inner)
+        
+        for row in outer:
             self.art.print_left_bar()
             for col_idx, ch in enumerate(row):
-                if (board.index(row), col_idx) in found_positions:
+                if (outer.index(row), col_idx) in found_positions:
                     print(Fore.GREEN + ch + Style.RESET_ALL, end="  ")
                 else:
                     print(ch, end="  ")
@@ -73,7 +86,7 @@ class TUI:
                 break
             elif key == "":
                 try:
-                    self.game.submit_guess(StrandStub())
+                    self.game.submit_strand(StrandStub(PosStub(0, 0), [Step("n")]))
                     self.display()
                 except Exception as e:
                     print(f"\n{Fore.RED}Game crashed with exception: {e}{Style.RESET_ALL}")
@@ -85,7 +98,7 @@ def main() -> None:
     Entry point for TUI program.
     """
     init(autoreset=True)  # colorama init
-    game: StrandsGameBase = StrandsGameStub()
+    game: StrandsGameBase = StrandsGameStub("", 0)
     art: ArtTUIBase = ArtTUIStub(frame_width=2, interior_width=40)
     tui = TUI(game, art)
     tui.run()
