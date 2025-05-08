@@ -3,12 +3,15 @@ GUI Implementation for Milestone 1:
 Pos, StrandFake, BoardFake, StrandsGameFake
 """
 import sys
+from typing import TypeAlias
+
 import pygame
 
 from stubs import PosStub, StrandStub, BoardStub, StrandsGameStub
 from ui import ArtGUIBase, ArtGUIStub
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
 
+Loc: TypeAlias = tuple[float, float]
 
 WINDOW_WIDTH = 300  # need to adjust so responds dynamically to fit words
 WINDOW_HEIGHT = 200 # need to adjust so responds dynamically to fit words
@@ -38,15 +41,16 @@ class GuiStrands:
     interior_wdth: float
     row_height: float
     col_width: float
-    circles: list[dict[tuple[float, float], float]]
+    circles: list[dict[Loc, float]]
     game: StrandsGameBase
 
-    # dictionary where key is index position of letter, value is a tuple of the pixel
-    # position as well as the (img_width, img_height) for that letter
-    lett_locs: list[dict[tuple[int, int], tuple[tuple[float, float], tuple[int, int]]]]
+    # dictionary where key is index position of letter,
+    # value is a tuple of the pixel position as well as
+    # the (img_width, img_height) for that letter
+    lett_locs: list[dict[tuple[int, int], tuple[Loc, tuple[int, int]]]]
 
     # list of active lines, a list of tuples containing start and end positions
-    lines: list[tuple[tuple[float, float], tuple[float, float]]]
+    lines: list[tuple[Loc, Loc]]
 
     def __init__(self) -> None:
         """
@@ -104,7 +108,8 @@ class GuiStrands:
 
                     elif event.key == pygame.K_RETURN:
                         # temporary arbitrary StrandStub assignment
-                        dummy_strd: StrandBase = StrandStub(PosStub(0, 0), [Step("n")])
+                        temp = StrandStub(PosStub(0, 0), [Step("n")])
+                        dummy_strd: StrandBase = temp
                         self.game.submit_strand(dummy_strd)
 
                         self.append_found_solutions(self.col_width / 2)
@@ -137,7 +142,7 @@ class GuiStrands:
 
         # draw background circles, if applicable
         for circle in self.circles:
-            pos_key: tuple[float, float] = list(circle.keys())[0]
+            pos_key: Loc = list(circle.keys())[0]
             rad: float = circle[pos_key]
 
             # Choosing one new color for all circles
@@ -190,20 +195,27 @@ class GuiStrands:
 
                 assert self.interior_wdth > img_width
                 x_gap = (self.col_width - img_width) / 2
-                x_loc = FRAME_WIDTH + x_counter * self.col_width - (img_width + x_gap)
+                x_loc = FRAME_WIDTH + (
+                    x_counter * self.col_width - (img_width + x_gap)
+                )
 
                 assert self.row_height > img_height
                 y_gap = (self.row_height - img_height) / 2
-                y_loc = FRAME_WIDTH + y_counter * self.row_height - (img_height + y_gap)
+                y_loc = FRAME_WIDTH + (
+                    y_counter * self.row_height - (img_height + y_gap)
+                )
 
                 location = (x_loc, y_loc)
                 self.surface.blit(text_image, location)
 
                 x_counter += 1
 
-                # creating dictionary that assigns one location uniquely to every letter
+                # creating dictionary that assigns one location
+                # uniquely to every letter
                 if not self.lett_locs:
-                    inner_locs[(r_ind, c_ind)] = (location, (img_width, img_height))
+                    inner_locs[(r_ind, c_ind)] = (
+                        (location, (img_width, img_height))
+                    )
 
             y_counter += 1
 
@@ -221,6 +233,12 @@ class GuiStrands:
         """
         Prepare and display bottom messages, which track the theme
         words found and the hint meter progress.
+
+        Inputs:
+            counter (int): Standard counter to help with positioning.
+
+        Returns:
+            Nothing
         """
         num_found = len(self.game.found_strands())
         tot_num = len(self.game.answers())
@@ -247,17 +265,30 @@ class GuiStrands:
         location = (x_loc, y_loc)
         self.surface.blit(text_image, location)
 
-    def append_line_between(self, loc_1: tuple[float, float], loc_2: tuple[float, float]) -> None:
+    def append_line_between(self, loc_1: Loc, loc_2: Loc) -> None:
         """
         Given two locations, save a line between these
         locations for later. This will serve to associate strands.
+
+        Inputs:
+            loc_1 (Loc): line start location
+            loc_2 (Loc): line end location
+
+        Returns:
+            Nothing
         """
         self.lines.append((loc_1, loc_2))
 
-    def append_found_solutions(self, width) -> None:
+    def append_found_solutions(self, width: float) -> None:
         """
         Responsible for appending to the overall circle list before they
         will be drawn. Currently called once per hitting return.
+
+        Inputs:
+            width (float): desired length to adjust circle radius
+
+        Returns:
+            Nothing
         """
         # gets appended as you hit space
         found_lst = self.game.found_strands()
