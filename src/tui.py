@@ -1,24 +1,11 @@
 # src/tui.py
 
 import sys
-import termios
-import tty
 from time import sleep
 from typing import List
 from ui import ArtTUIStub, ArtTUIBase
 from base import StrandsGameBase, StrandsGameBase
 from colorama import Fore, Style, init
-
-
-def getch() -> str:
-    """Wait for a key press on the terminal and return a single character."""
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-    try:
-        tty.setraw(fd)
-        return sys.stdin.read(1)
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 
 class TUI:
@@ -80,11 +67,11 @@ class TUI:
         """Main loop for TUI interaction."""
         self.display()
         while True:
-            key = getch()
-            if key.lower() == "q":
+            key = input("Press 'Enter' to submit a guess or 'q' to quit: ").strip().lower()
+            if key == "q":
                 print("Quitting...")
                 break
-            elif key == "\n":
+            elif key == "":
                 try:
                     self.game.submit_guess(StrandStub())
                     self.display()
