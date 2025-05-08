@@ -140,9 +140,10 @@ class StrandsGameFake(StrandsGameBase):
     hint_thresh: int
     game_board: list[list[str]]
     game_answers: list[tuple[str, StrandFake]]
-    tot_game_guesses: list[tuple[str, StrandFake]] # biggest issue is it currently does not
-                                                   # include strand guesses, since
-                                                   # dictionary not implmeneted
+
+    tot_game_guesses: list[tuple[str, StrandFake]] # does not
+                                                   # include strand guesses,
+                                                   # since dict not implmeneted
     hint_state: None | bool
     hint_word: str
     # guesses made after hint cleared
