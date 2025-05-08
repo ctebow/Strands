@@ -2,6 +2,6 @@
 
 Team members:
 - GUI: James Rosenberger (jmrosenberger)
-- TUI: Anna Sokolova (annasokol)
+- TUI: Anna Sokolova (annasok0l)
 - Art: Caden Tebow (ctebow)
 - QA:  Derrick Young (dvyoung)
