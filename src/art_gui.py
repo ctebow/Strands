@@ -2,6 +2,10 @@
 Art logic for GUI
 """
 
+### NOTE: Would be cool to add a dynamic background that talks with GUI and
+### reflects what the user is doing on screen (flashes blue when a word is
+### found???)
+
 import sys
 import pygame
 from ui import ArtGUIBase, GUIStub

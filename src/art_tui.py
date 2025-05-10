@@ -2,6 +2,12 @@
 Art logic for TUI
 """
 
+### NOTES TO SELF: I think I want to switch from colorama to RGB codes,
+### more annoying to type but many more colors. I also want to fix the frame to
+### be the same thickness on the side as on the top and bottom.
+### I also wanna think about how I can make a dynamic background that talks
+### with TUI.
+
 
 import sys
 from colorama import Back, Style
