@@ -135,6 +135,7 @@ class StrandsGameFake(StrandsGameBase):
     """
     Incomplete base class for Strands game logic.
     """
+
     game_theme: str
     hint_thresh: int
     game_board: list[list[str]]
@@ -224,6 +225,7 @@ class StrandsGameFake(StrandsGameBase):
         return self.hint_thresh
 
     def hint_meter(self) -> int:
+
         level = len(self.new_game_guesses)
         if level >= self.hint_threshold():
             print("You can request a hint!")

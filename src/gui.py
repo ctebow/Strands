@@ -8,6 +8,7 @@ from typing import TypeAlias
 import pygame
 
 from stubs import PosStub, StrandStub, BoardStub, StrandsGameStub
+from fakes import Pos, StrandFake, BoardFake, StrandsGameFake
 from ui import ArtGUIBase, ArtGUIStub
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
 
@@ -27,12 +28,12 @@ class GuiStrands:
     number of theme words found, which theme words found,
     and the hint meter current value.
 
-    Hitting Enter will submit a guess, whose strand is
-    igored before visualizing a corresponding answer,
-    in addition to previous found answers.
+    Moves from Stub to Fake implementation. Supports
+    Command-Line arguments for Play and Show mode.
 
-    Pressing Enter for a fifthm time will crash with an
-    exception.
+    Now includes interactions to select and submit
+    strands via a mouse input, as well as input
+    functionality for using ("h") and displaying hints.
 
     Pressing the "q" key at any time quits the application.
     """
