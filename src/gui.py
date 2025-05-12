@@ -14,8 +14,8 @@ from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
 
 Loc: TypeAlias = tuple[float, float]
 
-WINDOW_WIDTH = 300  # need to adjust so responds dynamically to fit words
-WINDOW_HEIGHT = 200 # need to adjust so responds dynamically to fit words
+WINDOW_WIDTH = 600  # need to adjust so responds dynamically to fit words
+WINDOW_HEIGHT = 600 # need to adjust so responds dynamically to fit words
 FRAME_WIDTH = 20
 LINE_WIDTH = 5
 
@@ -63,7 +63,7 @@ class GuiStrands:
         _, game_mode, brd_filename = tuple(sys.argv)
         self.game: StrandsGameBase = StrandsGameFake(brd_filename)
         board = self.game.board()
-
+        print(game_mode)
         if game_mode == "show":
             self.game_mode = "show"
         elif game_mode == "play":
@@ -118,7 +118,7 @@ class GuiStrands:
                     if event.key == pygame.K_q:
                         pygame.quit()
                         sys.exit()
-            
+
             if self.game_mode == "show" and self.lett_locs:
                         for _, show_strd in self.game.answers():
                             self.game.submit_strand(show_strd)
@@ -165,7 +165,7 @@ class GuiStrands:
         self.display_game_board()
 
         # Instruct PyGame to actually refresh the window with
-        # the elements we have just drawnq
+        # the elements we have just drawn
         pygame.display.update()
 
     def display_game_board(self) -> None:
@@ -307,9 +307,10 @@ class GuiStrands:
         asw_locations = new_strd.positions()
 
         last_center = None
+
         for pos in asw_locations: # could maybe draw strands here
             pt = (pos.r, pos.c)
-
+            
             for dct in self.lett_locs:
                 if pt in dct.keys():
                     (x_loc, y_loc), (img_width, img_height) = dct[pt]

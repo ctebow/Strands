@@ -88,6 +88,7 @@ class Board(BoardBase):
     rectangular grid of letters.
     """
 
+    # accidently implemented check if letters valid
     def __init__(self, letters: list[list[str]]):
 
         row_size = len(letters[0])
@@ -113,7 +114,7 @@ class Board(BoardBase):
 
     def get_letter(self, pos: PosBase) -> str:
 
-         # converting to 0-indexing
+        # converting to 0-indexing
         if pos.r > self.num_rows() - 1 or pos.c > self.num_cols() - 1:
             raise ValueError
         if pos.r < 0 or pos.c < 0:
@@ -131,12 +132,13 @@ class StrandsGame(StrandsGameBase):
 
     game_theme: str
     hint_thresh: int
+    shown_hint_msg: bool
     game_board: list[list[str]]
     game_answers: list[tuple[str, Strand]]
 
-    tot_game_guesses: list[tuple[str, Strand]] # does not
-                                               # include strand guesses,
-                                               # since dict not implmeneted
+    tot_game_guesses: list[tuple[str, Strand]] # only
+                                                   # includes strand guesses,
+                                                   # since dict not implmeneted
     hint_state: None | bool
     hint_word: str
     # guesses made after hint cleared
@@ -152,6 +154,7 @@ class StrandsGame(StrandsGameBase):
 
         self.game_theme = lines_lst[0]
         self.hint_thresh = hint_threshold
+        self.shown_hint_msg = False
 
         board_lst: list[list[str]] = []
 
@@ -220,8 +223,9 @@ class StrandsGame(StrandsGameBase):
     def hint_meter(self) -> int:
 
         level = len(self.new_game_guesses)
-        if level >= self.hint_threshold():
+        if level >= self.hint_threshold() and not self.shown_hint_msg:
             print("You can request a hint!")
+            self.shown_hint_msg = True
 
         return level
 
@@ -235,6 +239,7 @@ class StrandsGame(StrandsGameBase):
 
         for ind, (word, strd) in enumerate(self.answers()):
             if strd not in cur_theme_strds:
+                # ith answer is 0-indexed
                 i = ind
                 self.hint_word = word
                 return (i, self.hint_state)
@@ -243,32 +248,33 @@ class StrandsGame(StrandsGameBase):
         
     def submit_strand(self, strand: StrandBase) -> tuple[str, bool] | str:
 
-        pos = strand.start
-
         # ensures pos arguments of strand exist on board
         try:
-            self.board().get_letter(pos)
+            board_letters = [self.board().get_letter(pos) for pos in strand.positions()]
         except ValueError:
             return "Not a theme word"
 
-        for word, strd in self.answers():
-            if word[0] == self.game_board[pos.r][pos.c]:
+        board_word = "".join(board_letters)
+        for asw_word, strd in self.answers():
+            if board_word == asw_word:
                 if strd not in self.found_strands():
-                    self.tot_game_guesses.append((word, strd))
-                    self.new_game_guesses.append((word, strd))
+                    self.tot_game_guesses.append((asw_word, strd))
+                    self.new_game_guesses.append((asw_word, strd))
                     # theme word is found basic imp
-                    if word[0] == self.hint_word[0]:
+                    if asw_word == self.hint_word:
                         # clearing the hint
                         self.hint_state = None
                         self.new_game_guesses = []
 
-                    return (word, True)
+                    return (asw_word, True)
 
                 return "Already found"
 
         return "Not a theme word"
     
     def use_hint(self) -> tuple[int, bool] | str:
+
+        self.shown_hint_msg = False
 
         if self.active_hint() is None:
             # next step in active_hint

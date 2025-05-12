@@ -254,26 +254,25 @@ class StrandsGameFake(StrandsGameBase):
 
     def submit_strand(self, strand: StrandBase) -> tuple[str, bool] | str:
 
-        pos = strand.start
-
         # ensures pos arguments of strand exist on board
         try:
-            self.board().get_letter(pos)
+            board_letters = [self.board().get_letter(pos) for pos in strand.positions()]
         except ValueError:
             return "Not a theme word"
 
-        for word, strd in self.answers():
-            if word[0] == self.game_board[pos.r][pos.c]:
+        board_word = "".join(board_letters)
+        for asw_word, strd in self.answers():
+            if board_word == asw_word:
                 if strd not in self.found_strands():
-                    self.tot_game_guesses.append((word, strd))
-                    self.new_game_guesses.append((word, strd))
+                    self.tot_game_guesses.append((asw_word, strd))
+                    self.new_game_guesses.append((asw_word, strd))
                     # theme word is found basic imp
-                    if word[0] == self.hint_word[0]:
+                    if asw_word == self.hint_word:
                         # clearing the hint
                         self.hint_state = None
                         self.new_game_guesses = []
 
-                    return (word, True)
+                    return (asw_word, True)
 
                 return "Already found"
 
