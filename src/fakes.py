@@ -141,8 +141,8 @@ class StrandsGameFake(StrandsGameBase):
     game_board: list[list[str]]
     game_answers: list[tuple[str, StrandFake]]
 
-    tot_game_guesses: list[tuple[str, StrandFake]] # does not
-                                                   # include strand guesses,
+    tot_game_guesses: list[tuple[str, StrandFake]] # only
+                                                   # includes strand guesses,
                                                    # since dict not implmeneted
     hint_state: None | bool
     hint_word: str
@@ -242,6 +242,7 @@ class StrandsGameFake(StrandsGameBase):
 
         for ind, (word, strd) in enumerate(self.answers()):
             if strd not in cur_theme_strds:
+                # ith answer is 0-indexed
                 i = ind
                 self.hint_word = word
                 return (i, self.hint_state)
