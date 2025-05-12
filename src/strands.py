@@ -273,8 +273,8 @@ class StrandsGame(StrandsGameBase):
         return "Not a theme word"
     
     def use_hint(self) -> tuple[int, bool] | str:
-
-        self.shown_hint_msg = False
+        if self.hint_meter() - self.hint_thresh < self.hint_thresh:
+            self.shown_hint_msg = False
 
         if self.active_hint() is None:
             # next step in active_hint
