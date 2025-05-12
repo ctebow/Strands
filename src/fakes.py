@@ -138,6 +138,7 @@ class StrandsGameFake(StrandsGameBase):
 
     game_theme: str
     hint_thresh: int
+    shown_hint_msg: bool
     game_board: list[list[str]]
     game_answers: list[tuple[str, StrandFake]]
 
@@ -159,6 +160,7 @@ class StrandsGameFake(StrandsGameBase):
 
         self.game_theme = lines_lst[0]
         self.hint_thresh = hint_threshold
+        self.shown_hint_msg = False
 
         board_lst: list[list[str]] = []
 
@@ -227,8 +229,9 @@ class StrandsGameFake(StrandsGameBase):
     def hint_meter(self) -> int:
 
         level = len(self.new_game_guesses)
-        if level >= self.hint_threshold():
+        if level >= self.hint_threshold() and not self.shown_hint_msg:
             print("You can request a hint!")
+            self.shown_hint_msg = True
 
         return level
 
@@ -277,6 +280,7 @@ class StrandsGameFake(StrandsGameBase):
         return "Not a theme word"
 
     def use_hint(self) -> tuple[int, bool] | str:
+        self.shown_hint_msg = False
 
         if self.active_hint() is None:
             # next step in active_hint

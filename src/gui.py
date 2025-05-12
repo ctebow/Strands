@@ -44,6 +44,7 @@ class GuiStrands:
     col_width: float
     circles: list[dict[Loc, float]]
     game: StrandsGameBase
+    game_mode = str
 
     # dictionary where key is index position of letter,
     # value is a tuple of the pixel position as well as
@@ -58,8 +59,18 @@ class GuiStrands:
         Initializes the GUI application.
         """
         pygame.init()
-        self.game: StrandsGameBase = StrandsGameStub("", 0)
+
+        _, game_mode, brd_filename = tuple(sys.argv)
+        self.game: StrandsGameBase = StrandsGameFake(brd_filename)
         board = self.game.board()
+
+        if game_mode == "show":
+            self.game_mode = "show"
+        elif game_mode == "play":
+            self.game_mode = "play"
+        else:
+            raise ValueError("Unsupported Play Type")
+        
         pygame.display.set_caption(self.game.theme())
 
         # open application window
@@ -90,11 +101,12 @@ class GuiStrands:
             2. If there are any new events, process the events.
             3. Re-draw the window
         """
-        return_count = 0
+
         while True:
             events = pygame.event.get()
 
             for event in events:
+
                 if event.type == pygame.QUIT:
                     # uninitialize all Pygame modules
                     pygame.quit()
@@ -106,15 +118,11 @@ class GuiStrands:
                     if event.key == pygame.K_q:
                         pygame.quit()
                         sys.exit()
-
-                    elif event.key == pygame.K_RETURN:
-                        # temporary arbitrary StrandStub assignment
-                        temp = StrandStub(PosStub(0, 0), [Step("n")])
-                        dummy_strd: StrandBase = temp
-                        self.game.submit_strand(dummy_strd)
-
-                        self.append_found_solutions(self.col_width / 2)
-                        return_count += 1
+            
+            if self.game_mode == "show" and self.lett_locs:
+                        for _, show_strd in self.game.answers():
+                            self.game.submit_strand(show_strd)
+                            self.append_found_solutions(self.col_width / 2)
 
             # shows application window
             self.draw_window()
@@ -176,7 +184,7 @@ class GuiStrands:
         for r in range(row_nums):
             inner = []
             for c in range(col_nums):
-                pos: PosBase = PosStub(r, c)
+                pos: PosBase = Pos(r, c)
                 inner.append(board.get_letter(pos))
 
             outer.append(inner)
