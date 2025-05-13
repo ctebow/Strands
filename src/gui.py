@@ -54,7 +54,7 @@ class GuiStrands:
     # dictionary where key is index position of letter,
     # value is a tuple of the pixel position as well as
     # the (img_width, img_height) for that letter
-    lett_locs: list[dict[Pos, tuple[Loc, tuple[int, int]]]]
+    lett_locs: list[dict[tuple[int, int], tuple[Loc, tuple[int, int]]]]
 
     # list of active lines, a list of tuples containing start and end positions
     strd_lines: list[tuple[Loc, Loc]]
@@ -68,7 +68,7 @@ class GuiStrands:
         _, game_mode, brd_filename = tuple(sys.argv)
         self.game: StrandsGameBase = StrandsGameFake(brd_filename)
         board = self.game.board()
-        
+
         # dynamically setting up factors for window dimensions
         grid_dim = FONT_SIZE + LETTER_SPACER
 
@@ -79,7 +79,9 @@ class GuiStrands:
         bottom_width = text_image.get_width() + 2 * LETTER_SPACER
 
         # dynamic window dimension generation
-        window_width = max(grid_dim * board.num_cols(), bottom_width) + 2 * FRAME_WIDTH
+        window_width = (max(grid_dim * board.num_cols(), bottom_width)
+                        + 2 * FRAME_WIDTH
+                        )
         window_height = grid_dim * (board.num_rows() + 1) + 2 * FRAME_WIDTH
 
         if game_mode == "show":
@@ -88,7 +90,7 @@ class GuiStrands:
             self.game_mode = "play"
         else:
             raise ValueError("Unsupported Play Type")
-        
+
         pygame.display.set_caption(self.game.theme())
 
         # open application window
@@ -128,7 +130,6 @@ class GuiStrands:
             3. Re-draw the window
         """
         end = 0
-        hint_word = ""
         while True:
             events = pygame.event.get()
 
@@ -162,10 +163,13 @@ class GuiStrands:
 
                             self.handle_hint_conditions()
 
-                if self.game_mode == "play" and self.lett_locs and not self.game.game_over():
+                if (self.game_mode == "play" and
+                    self.lett_locs and not
+                    self.game.game_over()
+                    ):
                     if event.type == pygame.MOUSEBUTTONUP:
                         x_click, y_click = event.pos
-                        possible_circs = self.generate_possible_circles(self.col_width / 2)
+                        possible_circs = self.gen_pos_circs(self.col_width / 2)
 
                         for ky, val in possible_circs.items():
                             (cx, cy), rad = val
@@ -175,20 +179,21 @@ class GuiStrands:
                             if click_dis_sq <= rad**2:
                                 strd_word = self.handle_guess_clicks(ky)
 
-                                # ensures only reset hint circle on correct guess
+                                # only reset hint circle on correct guess
                                 if (strd_word is not None and
-                                    strd_word in [word for word, _ in self.game.answers()]
+                                    strd_word in
+                                    [word for word, _ in self.game.answers()]
                                     ):
                                     self.hint_circles = {}
 
             if self.game_mode == "show" and self.lett_locs:
-                        for _, show_strd in self.game.answers():
-                            self.game.submit_strand(show_strd)
-                            self.append_found_solutions(self.col_width / 2)
+                for _, show_strd in self.game.answers():
+                    self.game.submit_strand(show_strd)
+                    self.append_found_solutions(self.col_width / 2)
 
             # shows application window
             self.draw_window()
-            
+
             if self.game.game_over() and end == 0:
                 print("The game is over! Exit anytime.")
                 end += 1
@@ -215,47 +220,46 @@ class GuiStrands:
                          start_pos=loc_1, end_pos=loc_2, width=LINE_WIDTH)
 
         # draw background circles, if applicable
-        for pos_key in self.circles:
-            rad: float = self.circles[pos_key]
+        for pos_key, b_rad in self.circles.items():
 
             # Use pygame.draw.circle to draw a circle with its stored radius
             pygame.draw.circle(self.surface, color=(173, 216, 230),
-                            center=pos_key, radius=rad)
+                            center=pos_key, radius=b_rad)
 
         # draw temp circle lines
         for i in range(1, len(self.temp_circs_ordering)):
             cir1_ind = self.temp_circs_ordering[i - 1]
             cir2_ind = self.temp_circs_ordering[i]
 
-            possible_circles = self.generate_possible_circles(self.col_width / 2)
+            possible_circles = self.gen_pos_circs(self.col_width / 2)
             center1, _ = possible_circles[cir1_ind]
             center2, _ = possible_circles[cir2_ind]
 
-            pygame.draw.line(self.surface, color=(128, 128, 128), start_pos=center1, end_pos=center2, width=LINE_WIDTH) 
+            pygame.draw.line(self.surface, color=(128, 128, 128),
+                             start_pos=center1, end_pos=center2,
+                             width=LINE_WIDTH)
 
         # draw temp circles, if applicable
-        for t_pos_key in self.temp_circles:
-            rad: float = self.temp_circles[t_pos_key]
+        for t_pos_key, t_rad in self.temp_circles.items():
 
             # Use pygame.draw.circle to draw a circle with its stored radius
             pygame.draw.circle(self.surface, color=(128, 128, 128),
-                            center=t_pos_key, radius=rad)
+                            center=t_pos_key, radius=t_rad)
 
         # draw hint circles, if applicable
-        for ind, h_pos_key in enumerate(self.hint_circles):
-            rad: float = self.hint_circles[h_pos_key]
+        for ind, (h_pos_key, h_rad) in enumerate(self.hint_circles.items()):
 
             # Use pygame.draw.circle to draw a circle with its stored radius
             pygame.draw.circle(self.surface, color=(144, 238, 144),
-                            center=h_pos_key, radius=rad, width=2)
-            
+                            center=h_pos_key, radius=h_rad, width=2)
+
             # first or last word in hint_circles
             # should just have one circle in it at a time
             if self.active_hint:
-                if ind == 0 or ind == len(self.hint_circles) - 1:
+                if ind in {0, len(self.hint_circles) - 1}:
                     pygame.draw.circle(self.surface, color=(255, 71, 76),
-                                center=h_pos_key, radius=rad, width=2)
-            
+                                center=h_pos_key, radius=h_rad, width=2)
+
         # showing letters and bottom
         self.display_game_board()
 
@@ -290,11 +294,11 @@ class GuiStrands:
             inner_locs = {}
             for c_ind, col in enumerate(row):
                 msg = col
-                text_image: pygame.Surface = self.font.render(msg, True, msg_color)
+                txt_img: pygame.Surface = self.font.render(msg, True, msg_color)
 
                 # methods from official Pygame documentation
-                img_width = text_image.get_width()
-                img_height = text_image.get_height()
+                img_width = txt_img.get_width()
+                img_height = txt_img.get_height()
 
                 assert self.col_width > img_width
                 x_gap = (self.col_width - img_width) / 2
@@ -309,7 +313,7 @@ class GuiStrands:
                 )
 
                 location = (x_loc, y_loc)
-                self.surface.blit(text_image, location)
+                self.surface.blit(txt_img, location)
 
                 x_counter += 1
 
@@ -368,7 +372,7 @@ class GuiStrands:
         num_found = len(self.game.found_strands())
         tot_num = len(self.game.answers())
 
-        font: pygame.font.Font = pygame.font.Font("assets/thisprty.ttf", FONT_SIZE)
+        font = pygame.font.Font("assets/thisprty.ttf", FONT_SIZE)
         msg_color = (0, 0, 0)
 
         bottom_msg = self.generate_bottom_msg(num_found, tot_num)
@@ -408,16 +412,18 @@ class GuiStrands:
 
         Returns (str): the hint word, or none if active hint present
         """""
-        
+
         status = self.game.use_hint()
-        possible_circs = self.generate_possible_circles(self.col_width / 2)
+        possible_circs = self.gen_pos_circs(self.col_width / 2)
 
         # condition if active hint already there
         if isinstance(status, str):
             print(status)
-        
-        else:
+
+        elif isinstance(status, tuple):
             asw_ind, cond = status
+            assert isinstance(asw_ind, int)
+
             _, hint_strd = self.game.answers()[asw_ind]
             # no active hint before call, outline whole word
             if cond is False:
@@ -441,8 +447,9 @@ class GuiStrands:
 
             else:
                 self.active_hint = True
-            
-    def generate_possible_circles(self, width: float) -> dict[Pos, tuple[Loc, float]]:
+
+    def gen_pos_circs(self, width: float) -> dict[tuple[int, int],
+                                                  tuple[Loc, float]]:
         """
         For use in drawing circles and click-based
         GUI needs, generate a list of possible circles
@@ -451,8 +458,8 @@ class GuiStrands:
         Inputs:
             width (float): desired length to adjust circle radius
 
-        Returns (list[dict[tuple[int, int], tuple[Loc, float]]]):
-            Dicts to store the positions and radius of the circle,
+        Returns (dict[tuple[int, int], tuple[Loc, float]]]):
+            Dict to store the positions and radius of the circles,
             where the key is the index position of the circle and the
             value is a tuple of its pixel location and radius.
         """
@@ -467,7 +474,7 @@ class GuiStrands:
 
                 rad: float = width / 2
                 possible_circles[pt] = (center, rad)
-                
+
         return possible_circles
 
     def handle_guess_clicks(self, cir: tuple[int, int]) -> None | str:
@@ -480,7 +487,7 @@ class GuiStrands:
 
         Returns (str): the strand theme word submitted, or nothing
         """
-        possible_circs = self.generate_possible_circles(self.col_width / 2)
+        possible_circs = self.gen_pos_circs(self.col_width / 2)
 
         if cir not in possible_circs:
             raise ValueError("Invalid Click Location!")
@@ -500,10 +507,11 @@ class GuiStrands:
 
             cir_pos = Pos(r_ind, c_ind)
             l_cir_pos = Pos(l_r_ind, l_c_ind)
-        
+
             # double click last cir case
             if cir == last_cir:
-                pos_lst = [Pos(r_ind, c_ind) for r_ind, c_ind in self.temp_circs_ordering]
+                pos_lst = [Pos(r_ind, c_ind) for
+                           r_ind, c_ind in self.temp_circs_ordering]
                 step_lst = []
                 start = pos_lst[0]
 
@@ -532,8 +540,8 @@ class GuiStrands:
 
             # truncating if re-click already selected spot
             elif cir in self.temp_circs_ordering:
-                i = self.temp_circs_ordering.index(cir)
-                self.temp_circs_ordering = self.temp_circs_ordering[:i + 1]
+                l = self.temp_circs_ordering.index(cir)
+                self.temp_circs_ordering = self.temp_circs_ordering[:l + 1]
                 self.temp_circles = {
                     possible_circs[pt][0]: possible_circs[pt][1]
                     for pt in self.temp_circs_ordering
@@ -548,6 +556,8 @@ class GuiStrands:
             else:
                 self.temp_circs_ordering = [cir]
                 self.temp_circles = {center: rad}
+
+        return None
 
     def append_found_solutions(self, width: float) -> None:
         """
@@ -570,28 +580,24 @@ class GuiStrands:
             asw_locations = new_strd.positions()
 
             last_center = None
+            pos_dct = self.gen_pos_circs(width)
 
             for pos in asw_locations: # could maybe draw strands here
                 pt = (pos.r, pos.c)
-                
-                for dct in self.lett_locs:
-                    if pt in dct.keys():
-                        pos_dct = self.generate_possible_circles(width)
-                        for circ in pos_dct:
-                            if circ == pt:
-                                center = pos_dct[circ][0]
 
-                        # drawing a connection between every two points
-                        # in a theme word
-                        if last_center is not None:
-                            self.append_line_between(last_center, center)
+                if pt not in pos_dct:
+                    raise ValueError(f"No found center for {pt}")
 
-                        # changing tracking of last point always
-                        last_center = center
+                center = pos_dct[pt][0]
 
-                        rad: float = width / 2
-                        self.circles[center] = rad
-                        break
+                if last_center is not None:
+                    self.append_line_between(last_center, center)
+
+                # changing tracking of last point always
+                last_center = center
+
+                rad: float = width / 2
+                self.circles[center] = rad
 
 if __name__ == "__main__":
     GuiStrands()

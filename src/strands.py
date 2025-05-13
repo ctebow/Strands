@@ -28,7 +28,7 @@ class Pos(PosBase):
             c += 1
 
         return Pos(r, c)
-    
+
     def step_to(self, other: PosBase) -> Step:
         if self == other:
             raise ValueError
@@ -52,7 +52,7 @@ class Pos(PosBase):
             return Step(step)
 
         raise ValueError
-    
+
     def is_adjacent_to(self, other: PosBase) -> bool:
         try:
             self.step_to(other)
@@ -78,13 +78,13 @@ class Strand(StrandBase):
             position_list.append(pos)
 
         return position_list
-    
+
     def is_cyclic(self) -> bool:
         raise NotImplementedError
-    
+
     def is_folded(self) -> bool:
         raise NotImplementedError
-    
+
 
 class Board(BoardBase):
     """
@@ -112,7 +112,7 @@ class Board(BoardBase):
 
     def num_rows(self) -> int:
         return len(self.letters)
-    
+
     def num_cols(self) -> int:
         return len(self.letters[0])
 
@@ -125,7 +125,7 @@ class Board(BoardBase):
             raise ValueError
 
         return self.letters[pos.r][pos.c]
-    
+
     def evaluate_strand(self, strand: StrandBase) -> str:
         raise NotImplementedError
 
@@ -196,16 +196,16 @@ class StrandsGame(StrandsGameBase):
 
     def theme(self) -> str:
         return self.game_theme
-    
+
     def board(self) -> BoardBase:
         return Board(self.game_board)
-    
+
     def answers(self) -> list[tuple[str, StrandBase]]:
         return self.game_answers
-    
+
     def found_strands(self) -> list[StrandBase]:
 
-        found_strands = []
+        found_strands: list[StrandBase] = []
         for gus_word, _ in self.tot_game_guesses:
             for ans_word, ans_strd in self.game_answers:
                 if gus_word == ans_word:
@@ -213,17 +213,17 @@ class StrandsGame(StrandsGameBase):
                     found_strands.append(ans_strd)
 
         return found_strands
-    
+
     def game_over(self) -> bool:
 
         if len(self.found_strands()) == len(self.answers()):
             return True
 
         return False
-    
+
     def hint_threshold(self) -> int:
         return self.hint_thresh
-    
+
     def hint_meter(self) -> int:
 
         level = len(self.new_game_guesses)
@@ -250,12 +250,13 @@ class StrandsGame(StrandsGameBase):
                 return (i, self.hint_state)
 
         return None
-        
+
     def submit_strand(self, strand: StrandBase) -> tuple[str, bool] | str:
 
         # ensures pos arguments of strand exist on board
         try:
-            board_letters = [self.board().get_letter(pos) for pos in strand.positions()]
+            board_letters = [self.board().get_letter(pos)
+                             for pos in strand.positions()]
         except ValueError:
             return "Not a theme word"
 
@@ -273,9 +274,11 @@ class StrandsGame(StrandsGameBase):
 
                 return "Already found"
 
-        self.new_game_guesses.append((asw_word, strd))
+        # keeping track of global and refreshed guesses
+        self.tot_game_guesses.append((board_word, strand))
+        self.new_game_guesses.append((board_word, strand))
         return "Not a theme word"
-    
+
     def use_hint(self) -> tuple[int, bool] | str:
 
         if self.hint_state is None:
@@ -287,7 +290,7 @@ class StrandsGame(StrandsGameBase):
             self.hint_state = True
         else:
             return "Use your current hint"
-        
+
         # actually using the hint
         pre_status = self.hint_meter()
 
@@ -304,4 +307,3 @@ class StrandsGame(StrandsGameBase):
         new_active = self.active_hint()
         assert new_active is not None
         return new_active
-    

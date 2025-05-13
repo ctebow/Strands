@@ -207,7 +207,7 @@ class StrandsGameFake(StrandsGameBase):
 
     def found_strands(self) -> list[StrandBase]:
 
-        found_strands = []
+        found_strands: list[StrandBase] = []
         for gus_word, _ in self.tot_game_guesses:
             for ans_word, ans_strd in self.game_answers:
                 if gus_word == ans_word:
@@ -257,11 +257,13 @@ class StrandsGameFake(StrandsGameBase):
 
         # ensures pos arguments of strand exist on board
         try:
-            board_letters = [self.board().get_letter(pos) for pos in strand.positions()]
+            board_letters = [self.board().get_letter(pos)
+                             for pos in strand.positions()]
         except ValueError:
             return "Not a theme word"
 
         board_word = "".join(board_letters)
+
         for asw_word, strd in self.answers():
             if board_word == asw_word:
                 if strd not in self.found_strands():
@@ -275,7 +277,9 @@ class StrandsGameFake(StrandsGameBase):
 
                 return "Already found"
 
-        self.new_game_guesses.append((asw_word, strd))
+        # keeping track of global and refreshed guesses
+        self.tot_game_guesses.append((board_word, strand))
+        self.new_game_guesses.append((board_word, strand))
         return "Not a theme word"
 
     def use_hint(self) -> tuple[int, bool] | str:
@@ -289,7 +293,7 @@ class StrandsGameFake(StrandsGameBase):
             self.hint_state = True
         else:
             return "Use your current hint"
-        
+
         # actually using the hint
         pre_status = self.hint_meter()
 
