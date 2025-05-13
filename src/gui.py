@@ -254,7 +254,7 @@ class GuiStrands:
 
         self.display_bottom(y_counter)
 
-    def generate_bottom_msg(self, num_found: int, tot_num: int):
+    def generate_bottom_msg(self, num_found: int, tot_num: int) -> str:
         """
         For the sake of determining the dynamic width and
         height of the grid, store and generate the bottom
@@ -264,6 +264,9 @@ class GuiStrands:
         Inputs:
             num_found (int): the number of strands found
             tot_num (int): the total number of strands
+
+        Returns (str):
+            The desired bottom message
         """
 
         bottom_msg = (
@@ -320,6 +323,34 @@ class GuiStrands:
         """
         self.lines.append((loc_1, loc_2))
 
+    def generate_possible_circles(self, width: float) -> list[dict[tuple[int, int], tuple[Loc, float]]]:
+        """
+        For use in drawing circles and click-based
+        GUI needs, generate a list of possible circles
+        behind every letter in the grid.
+
+        Inputs:
+            width (float): desired length to adjust circle radius
+
+        Returns (list[dict[tuple[int, int], tuple[Loc, float]]]):
+            List of dicts to store the positions and radius of the circle,
+            where the key is the index position of the circle and the
+            value is a tuple of its pixel location and radius.
+        """
+
+        possible_circles = []
+        for dct in self.lett_locs:
+            for pt in dct.keys():
+                (x_loc, y_loc), (img_width, img_height) = dct[pt]
+                x_cent = x_loc + img_width / 2
+                y_cent = y_loc + img_height / 2
+                center = (x_cent, y_cent)
+
+                rad: float = width / 2
+                possible_circles.append({pt: (center, rad)})
+
+        return possible_circles
+
     def append_found_solutions(self, width: float) -> None:
         """
         Responsible for appending to the overall circle list before they
@@ -345,10 +376,9 @@ class GuiStrands:
             
             for dct in self.lett_locs:
                 if pt in dct.keys():
-                    (x_loc, y_loc), (img_width, img_height) = dct[pt]
-                    x_cent = x_loc + img_width / 2
-                    y_cent = y_loc + img_height / 2
-                    center = (x_cent, y_cent)
+                    for circ in self.generate_possible_circles(width):
+                        if circ.get(pt, 0) != 0:
+                            center = circ[pt][0]
 
                     # drawing a connection between every two points
                     # in a theme word
