@@ -194,7 +194,10 @@ class GuiStrands:
             # shows application window
             self.draw_window()
 
-            if self.game.game_over() and end == 0:
+            if (self.game_mode == "play" and
+                self.game.game_over() and
+                end == 0
+                ):
                 print("The game is over! Exit anytime.")
                 end += 1
 
