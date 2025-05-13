@@ -1,5 +1,5 @@
 """
-GUI Implementation for Milestone 1:
+GUI Implementation for Milestone 2:
 Pos, StrandFake, BoardFake, StrandsGameFake
 """
 import sys
@@ -138,6 +138,15 @@ class GuiStrands:
                     if event.key == pygame.K_q:
                         pygame.quit()
                         sys.exit()
+
+                    elif (
+                        self.game_mode == "play" and
+                        self.lett_locs and
+                        event.key == pygame.K_ESCAPE
+                        ):
+
+                            self.temp_circles = {}
+                            self.temp_circs_ordering = []
 
                 if self.game_mode == "play" and self.lett_locs:
                     if event.type == pygame.MOUSEBUTTONUP:
@@ -413,8 +422,31 @@ class GuiStrands:
             cir_pos = Pos(r_ind, c_ind)
             l_cir_pos = Pos(l_r_ind, l_c_ind)
         
+            # double click last cir case
+            if cir == last_cir:
+                pos_lst = [Pos(r_ind, c_ind) for r_ind, c_ind in self.temp_circs_ordering]
+                step_lst = []
+                start = pos_lst[0]
+
+                former = start
+                for i in pos_lst[1:]:
+                    step_lst.append(Step(former.step_to(i)))
+                    former = i
+
+                strd: StrandBase = StrandFake(start, step_lst)
+
+                # current output of status of strand
+                msg = self.game.submit_strand(strd)
+                print(msg)
+
+                self.append_found_solutions(self.col_width / 2)
+
+                # reset after attempt
+                self.temp_circles = {}
+                self.temp_circs_ordering = []
+
             # truncating if re-click already selected spot
-            if cir in self.temp_circs_ordering:
+            elif cir in self.temp_circs_ordering:
                 i = self.temp_circs_ordering.index(cir)
                 self.temp_circs_ordering = self.temp_circs_ordering[:i + 1]
                 self.temp_circles = {
@@ -446,33 +478,35 @@ class GuiStrands:
         # gets appended as you hit space
         found_lst = self.game.found_strands()
 
-        # want newest strand appended to list
-        new_strd = found_lst[-1]
-        asw_locations = new_strd.positions()
+        # only draw if found_lst not empty
+        if found_lst:
+            # want newest strand appended to list
+            new_strd = found_lst[-1]
+            asw_locations = new_strd.positions()
 
-        last_center = None
+            last_center = None
 
-        for pos in asw_locations: # could maybe draw strands here
-            pt = (pos.r, pos.c)
-            
-            for dct in self.lett_locs:
-                if pt in dct.keys():
-                    pos_dct = self.generate_possible_circles(width)
-                    for circ in pos_dct:
-                        if circ == pt:
-                            center = pos_dct[circ][0]
+            for pos in asw_locations: # could maybe draw strands here
+                pt = (pos.r, pos.c)
+                
+                for dct in self.lett_locs:
+                    if pt in dct.keys():
+                        pos_dct = self.generate_possible_circles(width)
+                        for circ in pos_dct:
+                            if circ == pt:
+                                center = pos_dct[circ][0]
 
-                    # drawing a connection between every two points
-                    # in a theme word
-                    if last_center is not None:
-                        self.append_line_between(last_center, center)
+                        # drawing a connection between every two points
+                        # in a theme word
+                        if last_center is not None:
+                            self.append_line_between(last_center, center)
 
-                    # changing tracking of last point always
-                    last_center = center
+                        # changing tracking of last point always
+                        last_center = center
 
-                    rad: float = width / 2
-                    self.circles[center] = rad
-                    break
+                        rad: float = width / 2
+                        self.circles[center] = rad
+                        break
 
 if __name__ == "__main__":
     GuiStrands()
