@@ -14,8 +14,8 @@ from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
 
 Loc: TypeAlias = tuple[float, float]
 
-WINDOW_WIDTH = 600  # need to adjust so responds dynamically to fit words
-WINDOW_HEIGHT = 600 # need to adjust so responds dynamically to fit words
+FONT_SIZE = 24
+LETTER_SPACER = 5
 FRAME_WIDTH = 20
 LINE_WIDTH = 5
 
@@ -44,7 +44,8 @@ class GuiStrands:
     col_width: float
     circles: list[dict[Loc, float]]
     game: StrandsGameBase
-    game_mode = str
+    game_mode: str
+    font: pygame.font.Font
 
     # dictionary where key is index position of letter,
     # value is a tuple of the pixel position as well as
@@ -63,7 +64,20 @@ class GuiStrands:
         _, game_mode, brd_filename = tuple(sys.argv)
         self.game: StrandsGameBase = StrandsGameFake(brd_filename)
         board = self.game.board()
-        print(game_mode)
+        
+        # dynamically setting up factors for window dimensions
+        grid_dim = FONT_SIZE + LETTER_SPACER
+
+        self.font = pygame.font.Font("assets/thisprty.ttf", FONT_SIZE)
+        strands_size = len(self.game.answers())
+        bottom_msg = self.generate_bottom_msg(strands_size, strands_size)
+        text_image = self.font.render(bottom_msg, True, (0, 0, 0))
+        bottom_width = text_image.get_width() + 2 * LETTER_SPACER
+
+        # dynamic window dimension generation
+        window_width = max(grid_dim * board.num_cols(), bottom_width) + 2 * FRAME_WIDTH
+        window_height = grid_dim * (board.num_rows() + 1) + 2 * FRAME_WIDTH
+
         if game_mode == "show":
             self.game_mode = "show"
         elif game_mode == "play":
@@ -74,11 +88,11 @@ class GuiStrands:
         pygame.display.set_caption(self.game.theme())
 
         # open application window
-        self.surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.surface = pygame.display.set_mode((window_width, window_height))
 
         # important interior attributes
-        self.interior_hght = WINDOW_HEIGHT - 2 * FRAME_WIDTH
-        self.interior_wdth = WINDOW_WIDTH - 2 * FRAME_WIDTH
+        self.interior_hght = window_height - 2 * FRAME_WIDTH
+        self.interior_wdth = window_width - 2 * FRAME_WIDTH
         self.row_height = self.interior_hght / (board.num_rows() + 1)
         self.col_width = self.interior_wdth / (board.num_cols())
         self.lett_locs = []
@@ -118,6 +132,9 @@ class GuiStrands:
                     if event.key == pygame.K_q:
                         pygame.quit()
                         sys.exit()
+
+                    if self.game_mode == "play" and self.lett_locs:
+                        pass
 
             if self.game_mode == "show" and self.lett_locs:
                         for _, show_strd in self.game.answers():
@@ -173,7 +190,6 @@ class GuiStrands:
         Display a series of string messages that combine
         to reflect the Strands game board.
         """
-        font: pygame.font.Font = pygame.font.Font("assets/thisprty.ttf", 24)
         msg_color = (0, 0, 0)
 
         board: BoardBase = self.game.board()
@@ -196,13 +212,13 @@ class GuiStrands:
             inner_locs = {}
             for c_ind, col in enumerate(row):
                 msg = col
-                text_image: pygame.Surface = font.render(msg, True, msg_color)
+                text_image: pygame.Surface = self.font.render(msg, True, msg_color)
 
                 # methods from official Pygame documentation
                 img_width = text_image.get_width()
                 img_height = text_image.get_height()
 
-                assert self.interior_wdth > img_width
+                assert self.col_width > img_width
                 x_gap = (self.col_width - img_width) / 2
                 x_loc = FRAME_WIDTH + (
                     x_counter * self.col_width - (img_width + x_gap)
@@ -238,9 +254,28 @@ class GuiStrands:
 
         self.display_bottom(y_counter)
 
+    def generate_bottom_msg(self, num_found: int, tot_num: int):
+        """
+        For the sake of determining the dynamic width and
+        height of the grid, store and generate the bottom
+        row message, which tracks the theme
+        words found and the hint meter progress.
+
+        Inputs:
+            num_found (int): the number of strands found
+            tot_num (int): the total number of strands
+        """
+
+        bottom_msg = (
+            f"Found {num_found}/{tot_num}; "
+            f"Hint Once {self.game.hint_meter()}/{self.game.hint_threshold()}"
+        )
+
+        return bottom_msg
+
     def display_bottom(self, counter: int) -> None:
         """
-        Prepare and display bottom messages, which track the theme
+        Prepare and display bottom messages, which tracks the theme
         words found and the hint meter progress.
 
         Inputs:
@@ -252,13 +287,10 @@ class GuiStrands:
         num_found = len(self.game.found_strands())
         tot_num = len(self.game.answers())
 
-        font: pygame.font.Font = pygame.font.Font("assets/thisprty.ttf", 24)
+        font: pygame.font.Font = pygame.font.Font("assets/thisprty.ttf", FONT_SIZE)
         msg_color = (0, 0, 0)
 
-        bottom_msg = (
-            f"Found {num_found}/{tot_num}; "
-            f"Hint Once {self.game.hint_meter()}/{self.game.hint_threshold()}"
-        )
+        bottom_msg = self.generate_bottom_msg(num_found, tot_num)
 
         text_image: pygame.Surface = font.render(bottom_msg, True, msg_color)
         img_width = text_image.get_width()
