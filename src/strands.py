@@ -13,7 +13,7 @@ class Pos(PosBase):
     indices increase down and to the right, respectively.
     """
 
-    def take_step(self, step: Step) -> "PosBase":
+    def take_step(self, step: Step) -> PosBase:
         c = self.c
         r = self.r
 
@@ -29,7 +29,7 @@ class Pos(PosBase):
 
         return Pos(r, c)
     
-    def step_to(self, other: "PosBase") -> Step:
+    def step_to(self, other: PosBase) -> Step:
         if self == other:
             raise ValueError
 
@@ -53,7 +53,7 @@ class Pos(PosBase):
 
         raise ValueError
     
-    def is_adjacent_to(self, other: object) -> bool:
+    def is_adjacent_to(self, other: PosBase) -> bool:
         try:
             self.step_to(other)
             return True
@@ -137,8 +137,8 @@ class StrandsGame(StrandsGameBase):
     game_answers: list[tuple[str, Strand]]
 
     tot_game_guesses: list[tuple[str, Strand]] # only
-                                                   # includes strand guesses,
-                                                   # since dict not implmeneted
+                                               # includes strand guesses,
+                                               # since dict not implmeneted
     hint_state: None | bool
     hint_word: str
     # guesses made after hint cleared
@@ -259,24 +259,22 @@ class StrandsGame(StrandsGameBase):
             if board_word == asw_word:
                 if strd not in self.found_strands():
                     self.tot_game_guesses.append((asw_word, strd))
-                    self.new_game_guesses.append((asw_word, strd))
                     # theme word is found basic imp
                     if asw_word == self.hint_word:
                         # clearing the hint
                         self.hint_state = None
-                        self.new_game_guesses = []
 
                     return (asw_word, True)
 
                 return "Already found"
 
+        self.new_game_guesses.append((asw_word, strd))
         return "Not a theme word"
     
     def use_hint(self) -> tuple[int, bool] | str:
-        if self.hint_meter() - self.hint_thresh < self.hint_thresh:
-            self.shown_hint_msg = False
 
-        if self.active_hint() is None:
+        _, status = self.active_hint()
+        if status is None:
             # next step in active_hint
             self.hint_state = False
 
@@ -284,15 +282,18 @@ class StrandsGame(StrandsGameBase):
             assert new_active is not None
             return new_active
 
-        intermediate = self.active_hint()
-        assert intermediate is not None
-        _, cond = intermediate
-        if cond is False:
+        elif status is False:
             # next step in active_hint
             self.hint_state = True
 
-            new_active = self.active_hint()
-            assert new_active is not None
-            return new_active
+        else:
+            return "Use your current hint"
+        
+        # actually using the hint
+        self.new_game_guesses = []
+        if self.hint_meter() - self.hint_thresh < self.hint_thresh:
+            self.shown_hint_msg = False
 
-        return "Use your current hint"
+        new_active = self.active_hint()
+        assert new_active is not None
+        return new_active

@@ -121,6 +121,7 @@ class GuiStrands:
             2. If there are any new events, process the events.
             3. Re-draw the window
         """
+        end = 0
 
         while True:
             events = pygame.event.get()
@@ -139,16 +140,23 @@ class GuiStrands:
                         pygame.quit()
                         sys.exit()
 
-                    elif (
+                    if (
                         self.game_mode == "play" and
                         self.lett_locs and
-                        event.key == pygame.K_ESCAPE
+                        not self.game.game_over()
                         ):
 
+                        if event.key == pygame.K_ESCAPE:
                             self.temp_circles = {}
                             self.temp_circs_ordering = []
 
-                if self.game_mode == "play" and self.lett_locs:
+                        if (event.key == pygame.K_h and
+                            self.game.hint_meter() > self.game.hint_threshold()
+                            ):
+                            
+                            self.game.use_hint()
+
+                if self.game_mode == "play" and self.lett_locs and not self.game.game_over():
                     if event.type == pygame.MOUSEBUTTONUP:
                         x_click, y_click = event.pos
                         possible_circs = self.generate_possible_circles(self.col_width / 2)
@@ -168,6 +176,11 @@ class GuiStrands:
 
             # shows application window
             self.draw_window()
+            
+            if self.game.game_over() and end == 0:
+                print("The game is over! Exit anytime.")
+                end += 1
+
 
     def draw_window(self) -> None:
         """
