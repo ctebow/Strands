@@ -80,9 +80,28 @@ class Strand(StrandBase):
         return position_list
 
     def is_cyclic(self) -> bool:
-        raise NotImplementedError
+        pos_lst = self.positions()
+        ind_lst = []
+        for pos in pos_lst:
+            ind_lst.append((pos.r, pos.c))
+        
+        # sets guarantee unique elements
+        if len(ind_lst) != len(set(ind_lst)):
+            return True
+        
+        return False
 
     def is_folded(self) -> bool:
+        connections: list[tuple[tuple[int, int], tuple[int, int]]] = []
+        pos_lst = self.positions()
+
+        for ind, pos in enumerate(pos_lst[:-1]):
+            start = pos
+            end = pos_lst[ind + 1]
+            connections.append(start, end)
+
+            
+
         raise NotImplementedError
 
 

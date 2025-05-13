@@ -7,7 +7,6 @@ from typing import TypeAlias
 
 import pygame
 
-from stubs import PosStub, StrandStub, BoardStub, StrandsGameStub
 from fakes import Pos, StrandFake, BoardFake, StrandsGameFake
 from ui import ArtGUIBase, ArtGUIStub
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
