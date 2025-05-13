@@ -62,6 +62,10 @@ class Pos(PosBase):
             return False
 
 class Strand(StrandBase):
+    """
+    Strands, represented as a start position
+    followed by a sequence of steps.
+    """
     def positions(self) -> list[PosBase]:
 
         stack = []
@@ -224,6 +228,7 @@ class StrandsGame(StrandsGameBase):
 
         level = len(self.new_game_guesses)
         if level >= self.hint_threshold() and not self.shown_hint_msg:
+            # only does this once per beating the threshold
             print("You can request a hint!")
             self.shown_hint_msg = True
 
@@ -299,3 +304,4 @@ class StrandsGame(StrandsGameBase):
         new_active = self.active_hint()
         assert new_active is not None
         return new_active
+    

@@ -230,6 +230,7 @@ class StrandsGameFake(StrandsGameBase):
 
         level = len(self.new_game_guesses)
         if level >= self.hint_threshold() and not self.shown_hint_msg:
+            # only does this once per beating the threshold
             print("You can request a hint!")
             self.shown_hint_msg = True
 
@@ -305,4 +306,3 @@ class StrandsGameFake(StrandsGameBase):
         new_active = self.active_hint()
         assert new_active is not None
         return new_active
-

@@ -44,6 +44,8 @@ class GuiStrands:
     col_width: float
     circles: dict[Loc, float]
     temp_circles: dict[Loc, float]
+    hint_circles: dict[Loc, float]
+    active_hint: bool
     temp_circs_ordering: list[tuple[int, int]]
     game: StrandsGameBase
     game_mode: str
@@ -100,11 +102,15 @@ class GuiStrands:
         self.lett_locs = []
 
         # Dictionaries to store the center and radius of the circle,
-        # both for the ones correponding to strands and to guesses
+        # both for the ones correponding to strands, guesses, and hints
         # the last contains index positions of ordered temp circles
         self.circles = {}
         self.temp_circles = {}
         self.temp_circs_ordering = []
+
+        # initially no active hint
+        self.hint_circles = {}
+        self.active_hint = False
 
         # similar for lines but stores tuples of start and end tuple positions
         self.strd_lines = []
@@ -122,7 +128,7 @@ class GuiStrands:
             3. Re-draw the window
         """
         end = 0
-
+        hint_word = ""
         while True:
             events = pygame.event.get()
 
@@ -154,7 +160,7 @@ class GuiStrands:
                             self.game.hint_meter() >= self.game.hint_threshold()
                             ):
 
-                            self.game.use_hint()
+                            self.handle_hint_conditions()
 
                 if self.game_mode == "play" and self.lett_locs and not self.game.game_over():
                     if event.type == pygame.MOUSEBUTTONUP:
@@ -167,7 +173,13 @@ class GuiStrands:
                             y_dis: float = y_click - cy
                             click_dis_sq: float = x_dis**2 + y_dis**2
                             if click_dis_sq <= rad**2:
-                                self.handle_guess_clicks(ky)
+                                strd_word = self.handle_guess_clicks(ky)
+
+                                # ensures only reset hint circle on correct guess
+                                if (strd_word is not None and
+                                    strd_word in [word for word, _ in self.game.answers()]
+                                    ):
+                                    self.hint_circles = {}
 
             if self.game_mode == "show" and self.lett_locs:
                         for _, show_strd in self.game.answers():
@@ -229,6 +241,21 @@ class GuiStrands:
             pygame.draw.circle(self.surface, color=(128, 128, 128),
                             center=t_pos_key, radius=rad)
 
+        # draw hint circles, if applicable
+        for ind, h_pos_key in enumerate(self.hint_circles):
+            rad: float = self.hint_circles[h_pos_key]
+
+            # Use pygame.draw.circle to draw a circle with its stored radius
+            pygame.draw.circle(self.surface, color=(144, 238, 144),
+                            center=h_pos_key, radius=rad, width=2)
+            
+            # first or last word in hint_circles
+            # should just have one circle in it at a time
+            if self.active_hint:
+                if ind == 0 or ind == len(self.hint_circles) - 1:
+                    pygame.draw.circle(self.surface, color=(255, 71, 76),
+                                center=h_pos_key, radius=rad, width=2)
+            
         # showing letters and bottom
         self.display_game_board()
 
@@ -374,6 +401,47 @@ class GuiStrands:
         """
         self.strd_lines.append((loc_1, loc_2))
 
+    def handle_hint_conditions(self) -> None:
+        """""
+        Responsible for changing attributes to
+        suit appropriate hint state upon asking for a hint.
+
+        Returns (str): the hint word, or none if active hint present
+        """""
+        
+        status = self.game.use_hint()
+        possible_circs = self.generate_possible_circles(self.col_width / 2)
+
+        # condition if active hint already there
+        if isinstance(status, str):
+            print(status)
+        
+        else:
+            asw_ind, cond = status
+            _, hint_strd = self.game.answers()[asw_ind]
+            # no active hint before call, outline whole word
+            if cond is False:
+                ind_list = []
+
+                # appending starting position
+                start_pos = hint_strd.start
+                ind_list.append((start_pos.r, start_pos.c))
+
+                # building a list of index theme word positions
+                former = start_pos
+                for step in hint_strd.steps:
+                    next_pos = former.take_step(step)
+                    ind_list.append((next_pos.r, next_pos.c))
+                    former = next_pos
+
+                # adds required circles to hint dict
+                for i in ind_list:
+                    center, rad = possible_circs[i]
+                    self.hint_circles[center] = rad
+
+            else:
+                self.active_hint = True
+            
     def generate_possible_circles(self, width: float) -> dict[Pos, tuple[Loc, float]]:
         """
         For use in drawing circles and click-based
@@ -402,8 +470,7 @@ class GuiStrands:
                 
         return possible_circles
 
-
-    def handle_guess_clicks(self, cir: tuple[int, int]) -> None:
+    def handle_guess_clicks(self, cir: tuple[int, int]) -> None | str:
         """
         Provided the index position of a cirle corresponding to a
         click, decides how to change class attributes in response.
@@ -411,8 +478,7 @@ class GuiStrands:
         Inputs:
             cir (tuple[int, int]): circle index position of mentioned click
 
-        Returns:
-            Nothing
+        Returns (str): the strand theme word submitted, or nothing
         """
         possible_circs = self.generate_possible_circles(self.col_width / 2)
 
@@ -452,11 +518,17 @@ class GuiStrands:
                 msg = self.game.submit_strand(strd)
                 print(msg)
 
-                self.append_found_solutions(self.col_width / 2)
+                if isinstance(msg, tuple):
+                    strd_word, correctness = msg
+                    if correctness:
+                        self.append_found_solutions(self.col_width / 2)
 
-                # reset after attempt
-                self.temp_circles = {}
-                self.temp_circs_ordering = []
+                        # reset after attempt
+                        self.temp_circles = {}
+                        self.temp_circs_ordering = []
+                        self.active_hint = False
+
+                        return strd_word
 
             # truncating if re-click already selected spot
             elif cir in self.temp_circs_ordering:
