@@ -1,11 +1,6 @@
 """
 Art logic for GUI
 """
-
-### NOTE: Would be cool to add a dynamic background that talks with GUI and
-### reflects what the user is doing on screen (flashes blue when a word is
-### found???)
-
 import sys
 import pygame
 import pygame.gfxdraw
@@ -13,7 +8,6 @@ import math
 from ui import ArtGUIBase, GUIStub
 
 ROOT_THREE = 1.732
-
 
 COLORS = {
             "Aqua": (0, 255, 255),
@@ -70,7 +64,7 @@ class ArtGUIHarlequin(ArtGUIBase):
     KITEHEIGHT = 20
     frame_width: int
 
-    def __init__(self, frame_width):
+    def __init__(self, frame_width: int):
 
         self.frame_width = frame_width
     
@@ -99,12 +93,19 @@ class ArtGUIHarlequin(ArtGUIBase):
                 (KITEWIDTH * (2 * w) / 2, KITEHEIGHT * ((2 * h + 1) / 2))))
 
 class ArtGUIHoneycomb(ArtGUIBase):
+    """
+    GUI art class that draws a grid of regular hexagons with the flat side up. 
+    Hexagon size and spacing are easily changed through class attributes. 
+    Future implementations will include methods of better center the hexagons
+    on a screen of varying sizes, currently hexagons simply cover the entire 
+    screen somewhat evenly. 
+    """
 
     frame_width: int
     HEX_RADIUS: int = 10
     HEX_SPACING: int = 6
 
-    def __init__(self, frame_width):
+    def __init__(self, frame_width: int):
         self.frame_width = frame_width
 
     def draw_background(self, surface: pygame.Surface) -> None:
@@ -112,7 +113,7 @@ class ArtGUIHoneycomb(ArtGUIBase):
         # basic info
         RADIUS = self.HEX_RADIUS
         SPACING = self.HEX_SPACING
-        frame_width = self.frame_width
+        frame_width = self.frame_width # keep just in case for later use
         width = surface.get_width() + RADIUS * 3 # make sure entire screen fill
         height = surface.get_height() + RADIUS * 3
     
@@ -120,7 +121,7 @@ class ArtGUIHoneycomb(ArtGUIBase):
         cx, cy = (0, 0)
         cy_odd = cy + ROOT_THREE / 2 * RADIUS + SPACING / 2
         x_offset = RADIUS * 1.5 + SPACING
-        y_offset = RADIUS * ROOT_THREE + SPACING
+        y_offset = RADIUS * ROOT_THREE + SPACING # keep just in case for later
 
         # for even indices (don't want to recompute odd y every time)
         for num in range(0, int(width / x_offset), 2):
@@ -132,20 +133,11 @@ class ArtGUIHoneycomb(ArtGUIBase):
             x_new = cx + x_offset * num
             self.draw_column_hex(surface, (x_new, cy_odd), height)
 
-        # more efficient code but not working currently 
-        """for col in range(int(width / x_offset) + 2):
-            for row in range(int(height / y_offset + 2)):
-                x = col * x_offset
-                y = col * y_offset
-                if col % 2 != 0:
-                    y += y_offset / 2
-                vertices = self.generate_vertices((x, y))
-                pygame.gfxdraw.filled_polygon(surface, vertices, COLORS["Red"])
-"""
     def draw_column_hex(self, surface: pygame.Surface,
-                        start: tuple[int], height: int) -> None:
+                start: tuple[int | float, int | float], height: int) -> None:
         """
-        Helper function to draw a column of hexagons. 
+        Helper function to draw a column of hexagons given a starting pos 
+        tuple and the height (number) of hexagons. 
         """
         cx, cy = start
         offset = self.HEX_RADIUS * ROOT_THREE + self.HEX_SPACING
@@ -156,7 +148,7 @@ class ArtGUIHoneycomb(ArtGUIBase):
                                             vertices, COLORS["Red"])
 
     def generate_vertices(self, 
-                          center: tuple[int, int]) -> list[tuple[int, int]]:
+            center: tuple[int | float, int | float]) -> list[tuple[float, float]]:
         """
         Helper function for draw_column_hex and draw_background, gives back the 
         a list of 6 vertice tuples for pygame to draw a regular hexagon. 
@@ -175,6 +167,16 @@ class ArtGUIHoneycomb(ArtGUIBase):
         return vertices
 
 class ArtGUIDrawStrands(ArtGUIBase):
+    """
+    GUI art class that draws "strands", represented by circles connected by
+    lines. Tons of customization is possible by adding new strands to
+    STRANDS_COORDS in the form of a list[str], where each string is composed of
+    two numbers, the first being the row of the circle and the second the
+    column. Circle and line sizes, background circle color, and normal circle
+    color can all be changed by modifying class attributes. Currently this
+    class only fits a 500 x 500 pixel grid, but future implementations will 
+    make it fit grids of various sizes.  
+    """
 
     frame_width: int
     circles_dict: dict[str, tuple[int, int]]
@@ -185,7 +187,7 @@ class ArtGUIDrawStrands(ArtGUIBase):
     SEPARATION: int = 10
     LINE_WIDTH: int = 16
     CIRCLE_COLOR: tuple[int, int, int] = (124, 209, 184) # blueish
-    BACKGROUND_CIRCLE_COLOR: int = (0, 0, 0)
+    BACKGROUND_CIRCLE_COLOR: tuple[int, int, int] = (0, 0, 0)
     LINE_COLOR: tuple[int, int, int] = (124, 209, 184)
 
     # put new circle indices to draw new strands
@@ -200,12 +202,13 @@ class ArtGUIDrawStrands(ArtGUIBase):
         ["29", "18", "19", "09", "08", "17", "16", "05"]
         ]
 
-    def __init__(self, frame_width):
+    def __init__(self, frame_width: int):
         self.frame_width = frame_width
-        self.circles_dict = None
+        self.circles_dict = {}
 
     def draw_background(self, surface: pygame.Surface) -> None:
-
+        
+        # change background circle color to make background circles visible. 
         self.draw_background_circles(surface)
         self.draw_strand_circles(surface)
         self.draw_lines(surface, self.STRANDS_COORDS)
@@ -230,17 +233,12 @@ class ArtGUIDrawStrands(ArtGUIBase):
         x0 = self.RADIUS + self.SEPARATION / 2
         y0 = self.RADIUS + self.SEPARATION / 2
         
-        circles_dict: dict[str, tuple[int, int]] = {}
-        for row in range(int(num_circles_y)): # used to be x
+        for row in range(int(num_circles_y)):
             for col in range(int(num_circles_x)):
                 x, y = (int(x0 + d_center_x * col), int(y0 + d_center_y * row))
-                circles_dict[f'{row}{col}'] = (x, y)
+                self.circles_dict[f'{row}{col}'] = (x, y)
                 pygame.gfxdraw.filled_circle(surface, x, y, self.RADIUS, 
                                              self.BACKGROUND_CIRCLE_COLOR)
-
-
-        # update for other methods
-        self.circles_dict = circles_dict
 
     def draw_lines(self, surface: pygame.Surface, 
                    addresses: list[list[str]]) -> None:
@@ -289,4 +287,4 @@ elif args[1] == "cat3":
     GUIStub(ArtGUIHoneycomb(int(sys.argv[2])), 
             int(sys.argv[3]), int(sys.argv[4])).run_event_loop()
 elif args[1] == "cat4":
-    GUIStub(ArtGUIDrawStrands(sys.argv[1]), 500, 500).run_event_loop()
+    GUIStub(ArtGUIDrawStrands(0), 500, 500).run_event_loop()
