@@ -273,25 +273,27 @@ class StrandsGame(StrandsGameBase):
     
     def use_hint(self) -> tuple[int, bool] | str:
 
-        _, status = self.active_hint()
-        if status is None:
+        if self.hint_state is None:
             # next step in active_hint
             self.hint_state = False
 
-            new_active = self.active_hint()
-            assert new_active is not None
-            return new_active
-
-        elif status is False:
+        elif self.hint_state is False:
             # next step in active_hint
             self.hint_state = True
-
         else:
             return "Use your current hint"
         
         # actually using the hint
-        self.new_game_guesses = []
-        if self.hint_meter() - self.hint_thresh < self.hint_thresh:
+        pre_status = self.hint_meter()
+
+        # trimming hint counter as needed
+        if pre_status >= self.hint_threshold():
+            self.new_game_guesses = self.new_game_guesses[:-3]
+        else:
+            self.new_game_guesses = []
+
+        # case where pre_status can be very large
+        if pre_status - self.hint_thresh < self.hint_thresh:
             self.shown_hint_msg = False
 
         new_active = self.active_hint()

@@ -150,10 +150,10 @@ class GuiStrands:
                             self.temp_circles = {}
                             self.temp_circs_ordering = []
 
-                        if (event.key == pygame.K_h and
-                            self.game.hint_meter() > self.game.hint_threshold()
+                        elif (event.key == pygame.K_h and
+                            self.game.hint_meter() >= self.game.hint_threshold()
                             ):
-                            
+
                             self.game.use_hint()
 
                 if self.game_mode == "play" and self.lett_locs and not self.game.game_over():
