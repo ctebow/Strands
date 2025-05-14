@@ -92,18 +92,30 @@ class Strand(StrandBase):
         return False
 
     def is_folded(self) -> bool:
-        connections: list[tuple[tuple[int, int], tuple[int, int]]] = []
+        connections: set[tuple[PosBase, PosBase]] = set()
         pos_lst = self.positions()
 
         for ind, pos in enumerate(pos_lst[:-1]):
-            start = pos
             end = pos_lst[ind + 1]
-            connections.append(start, end)
+            st = (pos.r, pos.c)
+            ed = (end.r, end.c)
 
-            
+            connections.add((st, ed))
 
-        raise NotImplementedError
+        for st, ed in connections:
+            start = Pos(st[0], st[1])
+            stop = Pos(ed[0], ed[1])
+            # checking if diagonal connection
+            if start.step_to(stop) in {Step.NW, Step.SW, Step.NE, Step.SE}:
+                
+                # two possible alternative diagonals
+                d_1 = (st[0], ed[1])
+                d_2 = (ed[0], st[1])
 
+                if (d_1, d_2) in connections or (d_2, d_1) in connections:
+                    return True
+        
+        return False
 
 class Board(BoardBase):
     """
@@ -115,6 +127,10 @@ class Board(BoardBase):
     def __init__(self, letters: list[list[str]]):
 
         row_size = len(letters[0])
+
+        # works with row size check to ensure nonempty rows
+        if row_size == 0:
+            raise ValueError
 
         # check row size
         for row in letters:
@@ -146,7 +162,14 @@ class Board(BoardBase):
         return self.letters[pos.r][pos.c]
 
     def evaluate_strand(self, strand: StrandBase) -> str:
-        raise NotImplementedError
+        msg = ""
+        pos_lst = strand.positions()
+
+        for pos in pos_lst:
+            # ValueError covered by get_letter()
+            msg += self.get_letter(pos)
+
+        return msg
 
 class StrandsGame(StrandsGameBase):
     """
