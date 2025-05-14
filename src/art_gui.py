@@ -22,6 +22,10 @@ COLORS = {
 }
 
 class ArtGUI9Slice(ArtGUIBase):
+    """
+    Art GUI implementation of a 9 slice pattern. Each slice is a different
+    color. 
+    """
 
     frame_width: int
     
@@ -59,6 +63,13 @@ class ArtGUI9Slice(ArtGUIBase):
             pygame.draw.rect(surface, color, rect)
 
 class ArtGUIHarlequin(ArtGUIBase):
+    """
+    GUI art class that draws a grid of regular kites. Kite width size and 
+    spacing are easily changed through class attributes. 
+    Future implementations will include methods of better center the kites
+    on a screen of varying sizes, currently kites simply cover the entire 
+    screen somewhat evenly.
+    """
 
     KITEWIDTH = 10
     KITEHEIGHT = 20
