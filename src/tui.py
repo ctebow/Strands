@@ -1,12 +1,27 @@
-# src/tui.py
-
 import sys
-from time import sleep
 from typing import List
 from ui import ArtTUIStub, ArtTUIBase
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
 from stubs import PosStub, StrandStub, BoardStub, StrandsGameStub
 from colorama import Fore, Style, init
+
+
+def step_from_char(ch: str) -> Step:
+    """
+    Convert a single-character direction string to a Step enum value.
+    Raises ValueError if the character is invalid.
+
+    Inputs:
+        ch: single character string representing direction (e.g. 'N', 'S', 'E', 'W', etc.)
+
+    Returns:
+        Step enum corresponding to the character
+    """
+    ch = ch.upper()
+    try:
+        return Step(ch)
+    except ValueError:
+        raise ValueError(f"Invalid step character: {ch}")
 
 
 class TUI:
@@ -17,16 +32,17 @@ class TUI:
     def __init__(self, game: StrandsGameBase, art: ArtTUIBase):
         """
         Constructor.
+
         Inputs:
-            game: an instance of StrandsGameBase (typically StrandsGameStub)
-            art: an instance of ArtTUIBase (typically ArtTUIStub)
+            game: instance of StrandsGameBase (e.g., StrandsGameStub)
+            art: instance of ArtTUIBase (e.g., ArtTUIStub)
         """
         self.game = game
         self.art = art
 
     def display(self) -> None:
         """Render the entire TUI screen."""
-        print("\033c", end="")  # clear screen
+        print("\033c", end="")  # Clear screen
         self.art.print_top_edge()
 
         # Theme display
@@ -34,12 +50,12 @@ class TUI:
         print(f"Theme: {self.game.theme()}", end="")
         self.art.print_right_bar()
 
-        # Hint meter
+        # Hint meter display
         self.art.print_left_bar()
-        print(f"Hint meter: {self.game.hint_threshold()}", end="")
+        print(f"Hint meter: {self.game.hint_meter()}", end="")
         self.art.print_right_bar()
 
-        # Progress
+        # Progress display
         self.art.print_left_bar()
         print(f"Found: {len(self.game.found_strands())}/{len(self.game.answers())}", end="")
         self.art.print_right_bar()
@@ -50,25 +66,22 @@ class TUI:
         self.art.print_right_bar()
 
         # Board display
-        found_positions = [strand.positions() for strand in self.game.found_strands()]
-
         board = self.game.board()
-        row_nums = board.num_rows()
-        col_nums = board.num_cols()
+        num_rows = board.num_rows()
+        num_cols = board.num_cols()
 
-        outer = []
-        for r in range(row_nums):
-            inner = []
-            for c in range(col_nums):
-                pos: PosBase = PosStub(r, c)
-                inner.append(board.get_letter(pos))
+        # Collect all found positions into a set for quick lookup
+        found_positions = set()
+        for strand in self.game.found_strands():
+            for pos in strand.positions():
+                found_positions.add((pos.r, pos.c))
 
-            outer.append(inner)
-        
-        for row in outer:
+        for r in range(num_rows):
             self.art.print_left_bar()
-            for col_idx, ch in enumerate(row):
-                if (outer.index(row), col_idx) in found_positions:
+            for c in range(num_cols):
+                pos = PosStub(r, c)
+                ch = board.get_letter(pos)
+                if (r, c) in found_positions:
                     print(Fore.GREEN + ch + Style.RESET_ALL, end="  ")
                 else:
                     print(ch, end="  ")
@@ -85,8 +98,11 @@ class TUI:
                 print("Quitting...")
                 break
             elif key == "":
+                # For the stub, the submitted strand is ignored anyway,
+                # so just submit any StrandStub with a valid Step list.
                 try:
-                    self.game.submit_strand(StrandStub(PosStub(0, 0), [Step("n")]))
+                    strand = StrandStub(PosStub(0, 0), [step_from_char("N")])
+                    self.game.submit_strand(strand)
                     self.display()
                 except Exception as e:
                     print(f"\n{Fore.RED}Game crashed with exception: {e}{Style.RESET_ALL}")
@@ -97,7 +113,7 @@ def main() -> None:
     """
     Entry point for TUI program.
     """
-    init(autoreset=True)  # colorama init
+    init(autoreset=True)  # Initialize colorama
     game: StrandsGameBase = StrandsGameStub("", 0)
     art: ArtTUIBase = ArtTUIStub(frame_width=2, interior_width=40)
     tui = TUI(game, art)
