@@ -8,9 +8,9 @@ from fakes import StrandFake, BoardFake, StrandsGameFake
 
 def test_inheritance() -> None:
     assert issubclass(Pos, PosBase)
-    assert issubclass(StrandFake, StrandBase)
-    assert issubclass(BoardFake, BoardBase)
-    assert issubclass(StrandsGameFake, StrandsGameBase)
+    assert issubclass(Strand, StrandBase)
+    assert issubclass(Board, BoardBase)
+    assert issubclass(StrandsGame, StrandsGameBase)
 
 
 def test_take_pos_step() -> None:
