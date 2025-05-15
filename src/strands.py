@@ -73,9 +73,10 @@ class Strand(StrandBase):
         position_list = [self.start]
 
         for step in self.steps:
-            pos = stack.pop().take_step(step)
-            stack.append(pos)
-            position_list.append(pos)
+            start_pos = stack.pop()
+            new_pos = start_pos.take_step(step)
+            stack.append(new_pos)
+            position_list.append(new_pos)
 
         return position_list
 
@@ -189,14 +190,53 @@ class StrandsGame(StrandsGameBase):
     hint_word: str
     # guesses made after hint cleared
     new_game_guesses: list[tuple[str, Strand]]
+    word_dictionary: list[str]
 
     def __init__(self, game_file: str | list[str], hint_threshold: int = 3):
 
+        # process raw txt file
         if isinstance(game_file, str):
             with open(game_file, encoding="utf-8") as f:
                 lines_lst: list[str] = [line.strip() for line in f.readlines()]
         else:
             lines_lst = [line.strip() for line in game_file]
+
+        # implementing checks for a valid game file
+        height = 0
+        for idx, row in enumerate(lines_lst[2:]):
+            if row == ":":
+                height = idx
+                break
+            # check if board rectangular
+            if len(line) != len(lines_lst[2]):
+                raise ValueError
+
+            # check each board character
+            letters = row.split()
+            for letter in letters:
+                if len(letter) > 1 and not letter.isalpha():
+                    raise ValueError
+        
+        for row in lines_lst[height + 4:]:
+            if row == "":
+                break
+            letters = row.split()
+            
+            # check answer length
+            if len(letters[0]) < 4:
+                raise ValueError
+
+            # check row position
+            if int(letters[1]) > len(lines_lst[2] + 1):
+                raise ValueError
+            # check col position
+            if int(letters[2]) > height + 1:
+                raise ValueError
+            
+            if letters[0] != "".join(letters[3:]):
+                ... # not correct
+
+
 
         self.game_theme = lines_lst[0]
         self.hint_thresh = hint_threshold
@@ -229,6 +269,13 @@ class StrandsGame(StrandsGameBase):
             steps.extend([Step(dirc.lower()) for dirc in full[3:]])
 
             game_answers.append((word, Strand(start, steps)))
+
+        # initializing word dictionary using web2.txt
+        with open("assets/web2.txg", encoding="utf-8") as f:
+            word_dictionary = [line.strip() for line in f.readlines()]
+
+        # word dictionary
+        self.word_dictionary = word_dictionary
 
         self.game_answers = game_answers
         self.tot_game_guesses = []
@@ -279,13 +326,13 @@ class StrandsGame(StrandsGameBase):
     def active_hint(self) -> None | tuple[int, bool]:
 
         # theme words found thus far
-        cur_theme_strds = self.found_strands()
+        found_theme_strds = self.found_strands()
 
         if self.hint_state is None:
             return None
 
         for ind, (word, strd) in enumerate(self.answers()):
-            if strd not in cur_theme_strds:
+            if strd not in found_theme_strds:
                 # ith answer is 0-indexed
                 i = ind
                 self.hint_word = word
@@ -303,49 +350,84 @@ class StrandsGame(StrandsGameBase):
             return "Not a theme word"
 
         board_word = "".join(board_letters)
-        for asw_word, strd in self.answers():
+
+        # check if too short
+        if len(board_word) < 4:
+            return "Too short"
+
+        # check if answer/already found answer
+        for asw_word, asw_strd in self.answers():
             if board_word == asw_word:
-                if strd not in self.found_strands():
-                    self.tot_game_guesses.append((asw_word, strd))
+                if asw_strd not in self.found_strands():
+                    self.tot_game_guesses.append((asw_word, asw_strd))
                     # theme word is found basic imp
                     if asw_word == self.hint_word:
                         # clearing the hint
                         self.hint_state = None
 
+
                     return (asw_word, True)
 
                 return "Already found"
+        
+        # check if dictionary word/already found dictionary word
+        if board_word in self.word_dictionary:
+            # is an unfound word
+            if (board_word, strand) not in self.tot_game_guesses:
+                self.tot_game_guesses.append(board_word, strand)
 
-        # keeping track of global and refreshed guesses
-        self.tot_game_guesses.append((board_word, strand))
-        self.new_game_guesses.append((board_word, strand))
-        return "Not a theme word"
+                # hint meter updates when this is appended
+                self.new_game_guesses.append((board_word, strand))
+                
+                return (board_word, False)
+            # already found
+            else:
+                return "Already found"
+        
+        # word is not a valid dictionary word
+        else:
+            return "Not in word list"
 
     def use_hint(self) -> tuple[int, bool] | str:
 
-        if self.hint_state is None:
-            # next step in active_hint
-            self.hint_state = False
 
+        hint_level = self.hint_meter()
+        hint_threshold = self.hint_threshold()
+
+        # hint level not high enough
+        if hint_level < self.hint_threshold():
+            return "No hint yet"
+        
+        # we now know we can get a hint, update hint status
+        if self.hint_state is None:
+            self.hint_state = False
         elif self.hint_state is False:
-            # next step in active_hint
             self.hint_state = True
         else:
             return "Use your current hint"
 
-        # actually using the hint
-        pre_status = self.hint_meter()
-
-        # trimming hint counter as needed
-        if pre_status >= self.hint_threshold():
-            self.new_game_guesses = self.new_game_guesses[:-3]
-        else:
-            self.new_game_guesses = []
-
-        # case where pre_status can be very large
-        if pre_status - self.hint_thresh < self.hint_thresh:
-            self.shown_hint_msg = False
-
+        # with updated hint state, we can grab our hint
         new_active = self.active_hint()
         assert new_active is not None
+        
+        # since we used a hint, we need to trim the hint meter
+        num_new_hint = (len(self.new_game_guesses)
+                                        - hint_threshold)
+        self.new_game_guesses = self.new_game_guesses[:-num_new_hint]
+
         return new_active
+                
+
+        # NOTE: Clarify what this does tomorrow before submission
+        # case where pre_status can be very large
+        if hint_level - self.hint_thresh < self.hint_thresh:
+            self.shown_hint_msg = False
+
+    
+with open("boards/a-good-roast.txt", encoding="utf-8") as f:
+                lines_lst: list[str] = [line.strip() for line in f.readlines()]
+
+line = lines_lst[2]
+letters = line.split()
+
+print(letters)
