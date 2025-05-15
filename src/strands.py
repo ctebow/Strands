@@ -414,19 +414,16 @@ class StrandsGame(StrandsGameBase):
         else:
             return "Use your current hint"
 
+        # since we used a hint, we need to trim the hint meter
+        num_new_hints = (len(self.new_game_guesses)
+                        - hint_threshold)
+        self.new_game_guesses = self.new_game_guesses[:-num_new_hints]
+
+        if hint_level - self.hint_thresh < self.hint_thresh:
+            self.shown_hint_msg = False
+
         # with updated hint state, we can grab our hint
         new_active = self.active_hint()
         assert new_active is not None
 
-        # since we used a hint, we need to trim the hint meter
-        num_new_hints = (len(self.new_game_guesses)
-                                        - hint_threshold)
-        self.new_game_guesses = self.new_game_guesses[:-num_new_hints]
-
         return new_active
-
-
-        # NOTE: Clarify what this does tomorrow before submission (not sure if its necessary)
-        # case where pre_status can be very large
-        if hint_level - self.hint_thresh < self.hint_thresh:
-            self.shown_hint_msg = False
