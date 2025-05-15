@@ -1,6 +1,7 @@
 import pytest
+import os
 
-from src.strands import Pos, Strand, Board, StrandsGame
+from strands import Pos, Strand, Board, StrandsGame
 from base import Step, PosBase, StrandBase, BoardBase, StrandsGameBase
 from fakes import StrandFake, BoardFake, StrandsGameFake 
 
@@ -83,11 +84,35 @@ def test_strand_positions_long_folded_vs_unfolded() -> None:
     assert not unfolded.is_folded()
     assert folded.is_folded()
 
+def test_is_not_cyclic() -> None:
+    strand1 = Strand(Pos(0,0), [Step.E, Step.E, Step.E])
+    strand2 = Strand(Pos(1,1), [Step.SE, Step.NE, Step.W])
+    strand3 = Strand(Pos(2,2), [Step.N, Step.NE, Step.E])
+    strand4 = Strand(Pos(3,3), [Step.W, Step.S, Step.E])
+
+    assert not strand1.is_cyclic()
+    assert not strand2.is_cyclic()
+    assert not strand3.is_cyclic()
+    assert not strand4.is_cyclic()
+
+def test_is_cyclic() -> None:
+    strand1 = Strand(Pos(0,0), [Step.E, Step.W])
+    strand2 = Strand(Pos(1,1), [Step.W, Step.S, Step.E, Step.N])
+    strand3 = Strand(Pos(2,2), [Step.NE, Step.W, Step.W, Step.SW])
+    strand4 = Strand(Pos(3,3), [Step.SW, Step.NW, Step.NE, Step.SE])
+
+    assert strand1.is_cyclic()
+    assert strand2.is_cyclic()
+    assert strand3.is_cyclic()
+    assert strand4.is_cyclic()
+
+
 def test_load_game_cs_142_txt() -> None:
     game = StrandsGameFake("boards/cs-142.txt")
     assert game.theme() == '"CS 142"'
     assert game.board().num_rows() == 3
     assert game.board().num_cols() == 5
+
 
 def test_load_game_cs_142_variations() -> None:
     variants = [
@@ -171,3 +196,159 @@ def test_play_game_cs_142_more() -> None:
     assert game.submit_strand(StrandFake(Pos(1, 1), [])) == ("forty", True)
     assert game.submit_strand(StrandFake(Pos(2, 4), [])) == ("two", True)
     assert game.game_over()
+
+def test_overlapping() -> None:
+   game1 = StrandsGameFake("boards/cs-142.txt")
+   game2 = StrandsGameFake("boards/cs-142.txt")
+   
+   strand1 = StrandFake(Pos(1,1), [Step.E, Step.E, Step.NE, Step.S])
+   strand2 = StrandFake(Pos(1,1), [Step.E, Step.E, Step.SE, Step.N])
+   
+   result1 = game1.submit_strand(strand1)
+   result2 = game2.submit_strand(strand2)
+   
+   assert result1 == ("forty", True)
+   assert result2 == ("forty", True)
+
+def test_load_game_directions_file() -> None:
+    game = StrandsGameFake("boards/directions.txt")
+    assert game.theme() == '"Directions"'
+    assert game.board().num_rows() == 7
+    assert game.board().num_cols() == 4
+
+def test_load_game_cs_142_variations() -> None:
+    game1 = StrandsGameFake("boards/cs-142.txt")
+    text_variant = [
+        '"CS 142"',
+        '',
+        'C S M C T',
+        'O F O R Y',
+        'N E O W T',
+        '',
+        'cmsc 1 4 w w w',
+        'one 2 1 s e',
+        'forty 2 2 e e ne s',
+        'two 3 5 w w',
+    ]
+    game2 = StrandsGameFake(text_variant)
+
+    assert game1.theme() == game2.theme()
+    assert game1.board().num_rows() == game2.board().num_rows()
+    assert game1.board().num_cols() == game2.board().num_cols()
+    assert {word for word, _ in game1.answers()} == {word for word, _ in game2.answers()}
+
+def test_game_directions_invalid() -> None:
+
+    bad_variant1 = [
+        '"Directions"',
+        'E A S T',
+        'T S E W',
+        'S H D R',
+        '',
+        'east 1 1 z z'
+    ]
+    bad_variant2 = [
+        '"Directions"',
+        'E A S T',
+        'T S E W',
+        'S H D R',
+        '',
+        'east 9 9 e kw e'
+    ]
+    bad_variant3 = [
+        '"Directions"',
+        'E A S T',
+        'T S E W',
+        'S H D R',
+        '',
+        'east'
+    ]
+
+    for bad_variant in [bad_variant1, bad_variant2, bad_variant3]:
+        with pytest.raises(Exception):
+            StrandsGameFake(bad_variant)
+
+def test_play_game_directions_once() -> None:
+    game = StrandsGameFake("boards/directions.txt")
+
+    result1 = game.submit_strand(StrandFake(Pos(0, 0), [Step.E, Step.E, Step.E]))
+    result2 = game.submit_strand(StrandFake(Pos(1, 3), [Step.W, Step.W, Step.W]))
+    result3 = game.submit_strand(StrandFake(Pos(2, 0), [Step.S, Step.S, Step.S, Step.S]))
+    result4 = game.submit_strand(StrandFake(Pos(6, 1), [Step.N, Step.N, Step.N, Step.N]))
+
+    assert result1 == ("east", True)
+    assert result2 == ("west", True)
+    assert result3 == ("south", True)
+    assert result4 == ("north", True)
+
+    found_words = {word for word, _ in game.answers()}
+    assert found_words == {"directions", "east", "west", "south", "north"}
+
+def test_play_game_directions_twice() -> None:
+    game = StrandsGameFake("boards/directions.txt")
+
+    assert game.submit_strand(StrandFake(Pos(0, 0), [Step.E, Step.E, Step.E])) == ("east", True)
+    assert game.submit_strand(StrandFake(Pos(1, 3), [Step.W, Step.W, Step.W])) == ("west", True)
+
+    assert game.submit_strand(StrandFake(Pos(0, 0), [Step.E, Step.E, Step.E])) == "Already found"
+    assert game.submit_strand(StrandFake(Pos(1, 3), [Step.W, Step.W, Step.W])) == "Already found"
+
+    found = {word for word, _ in game.answers()}
+    assert found == {"directions", "north", "south", "east", "west"}
+
+def test_play_game_directions_three_times() -> None:
+   game = StrandsGameFake("boards/directions.txt")
+   
+   assert game.submit_strand(StrandFake(Pos(0, 0), [Step.E, Step.E, Step.E])) == ("east", True)
+   assert game.submit_strand(StrandFake(Pos(1, 3), [Step.W, Step.W, Step.W])) == ("west", True)
+   assert game.submit_strand(StrandFake(Pos(2, 0), [Step.S, Step.S, Step.S, Step.S])) == ("south", True)
+   assert game.submit_strand(StrandFake(Pos(6, 1), [Step.N, Step.N, Step.N, Step.N])) == ("north", True)
+   assert game.submit_strand(StrandFake(Pos(3, 3), [Step.S, Step.NE, Step.S, Step.S, Step.S, Step.NW, Step.S, Step.SE, Step.W])) == ("directions", True)
+   
+   found = {word for word, strand in game.answers()}
+   assert "directions" in found
+
+def test_play_game_directions_three_times() -> None:
+    game = StrandsGameFake("boards/directions.txt")
+
+    assert game.submit_strand(StrandFake(Pos(0, 0), [Step.E, Step.E, Step.E])) == ("east", True)
+    assert game.submit_strand(StrandFake(Pos(1, 3), [Step.W, Step.W, Step.W])) == ("west", True)
+    assert game.submit_strand(StrandFake(Pos(2, 0), [Step.S, Step.S, Step.S, Step.S])) == ("south", True)
+    assert game.submit_strand(StrandFake(Pos(6, 1), [Step.N, Step.N, Step.N, Step.N])) == ("north", True)
+
+    result = game.submit_strand(StrandFake(Pos(3, 3), [
+        Step.S, Step.NE, Step.S, Step.S, Step.S,
+        Step.NW, Step.S, Step.SE, Step.W
+    ]))
+
+    assert result == ("directions", True) or result == "Already found"
+
+    found = {word for word, _ in game.answers()}
+    assert "directions" in found
+
+def test_play_game_directions_more() -> None:
+    game = StrandsGameFake("boards/directions.txt")
+
+    assert game.submit_strand(StrandFake(Pos(0, 0), [Step.E, Step.E, Step.E])) == ("east", True)
+    assert game.submit_strand(StrandFake(Pos(1, 3), [Step.W, Step.W, Step.W])) == ("west", True)
+    assert game.submit_strand(StrandFake(Pos(2, 0), [Step.S, Step.S, Step.S, Step.S])) == ("south", True)
+    assert game.submit_strand(StrandFake(Pos(6, 1), [Step.N, Step.N, Step.N, Step.N])) == ("north", True)
+
+    result = game.submit_strand(StrandFake(Pos(3, 3), [
+        Step.S, Step.NE, Step.S, Step.S, Step.S,
+        Step.NW, Step.S, Step.SE, Step.W
+    ]))
+
+    assert result == ("directions", True) or result == "Already found"
+
+    found = {word for word, _ in game.answers()}
+    assert found == {"east", "west", "south", "north", "directions"}
+
+def test_valid_game_files() -> None:
+    for filename in os.listdir("boards"):
+        if filename.endswith(".txt"):
+            filepath = f"boards/{filename}"
+            try:
+                StrandsGameFake(filepath)
+            except Exception as e:
+                raise AssertionError(f"Failed to load {filename}: {e}")

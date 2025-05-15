@@ -18,14 +18,26 @@ class Pos(PosBase):
         r = self.r
 
         # value method from official python website Enum documentation
-        if "w" in step.value:
+        if step == step.W:
             c -= 1
-        if "n" in step.value:
-            r -= 1
-        if "s" in step.value:
-            r += 1
-        if "e" in step.value:
+        elif step == step.E:
             c += 1
+        elif step == step.N:
+            r -= 1
+        elif step == step.S:
+            r += 1
+        elif step == step.NE:
+            r -= 1
+            c += 1
+        elif step == step.NW:
+            r -= 1
+            c -= 1
+        elif step == step.SE:
+            r += 1
+            c += 1
+        else:
+            r += 1
+            c -= 1
 
         return Pos(r, c)
 
@@ -180,7 +192,7 @@ class StrandsGame(StrandsGameBase):
     game_theme: str
     hint_thresh: int
     shown_hint_msg: bool
-    game_board: list[list[str]]
+    game_board: Board
     game_answers: list[tuple[str, Strand]]
 
     tot_game_guesses: list[tuple[str, Strand]] # only
@@ -201,44 +213,13 @@ class StrandsGame(StrandsGameBase):
         else:
             lines_lst = [line.strip() for line in game_file]
 
-        # implementing checks for a valid game file
-        height = 0
-        for idx, row in enumerate(lines_lst[2:]):
-            if row == ":":
-                height = idx
-                break
-            # check if board rectangular
-            if len(line) != len(lines_lst[2]):
-                raise ValueError
-
-            # check each board character
-            letters = row.split()
-            for letter in letters:
-                if len(letter) > 1 and not letter.isalpha():
-                    raise ValueError
-        
-        for row in lines_lst[height + 4:]:
-            if row == "":
-                break
-            letters = row.split()
-            
-            # check answer length
-            if len(letters[0]) < 4:
-                raise ValueError
-
-            # check row position
-            if int(letters[1]) > len(lines_lst[2] + 1):
-                raise ValueError
-            # check col position
-            if int(letters[2]) > height + 1:
-                raise ValueError
-            
-            if letters[0] != "".join(letters[3:]):
-                ... # not correct
-
-
 
         self.game_theme = lines_lst[0]
+
+        # check if game theme exists:
+        if self.game_theme == "":
+            raise ValueError
+        
         self.hint_thresh = hint_threshold
         self.shown_hint_msg = False
 
@@ -253,7 +234,7 @@ class StrandsGame(StrandsGameBase):
             alph_lst = [alph.lower() for alph in r.split()]
             board_lst.append(alph_lst)
 
-        self.game_board = board_lst
+        self.game_board = Board(board_lst) # updated to be board object
 
         game_answers: list[tuple[str, Strand]] = []
         for ind, r in enumerate(lines_lst[board_stp:]):
@@ -270,13 +251,39 @@ class StrandsGame(StrandsGameBase):
 
             game_answers.append((word, Strand(start, steps)))
 
+        # game board and answer checks (board object already checks some)
+
+        # check if no space between theme and board
+        if self.game_board.letters == []:
+            raise ValueError
+        # check if no space between board and answers
+        if game_answers == []:
+            raise ValueError
+        
+        tot_ans_len = 0
+        for answer in game_answers:
+            # check answer longer than three letters
+            if len(answer[0]) < 3:
+                raise ValueError
+
+            # check answers start on board and strand object actually gives word
+            if answer[0] != self.game_board.evaluate_strand(answer[1]):
+                raise ValueError
+            
+            tot_ans_len += len(answer[0])
+        
+        # make sure answers fill board
+        if tot_ans_len != (self.game_board.num_cols() * 
+                           self.game_board.num_rows()):
+            print("answers do not fill board")
+            raise ValueError
+
         # initializing word dictionary using web2.txt
-        with open("assets/web2.txg", encoding="utf-8") as f:
+        with open("assets/web2.txt", encoding="utf-8") as f:
             word_dictionary = [line.strip() for line in f.readlines()]
 
         # word dictionary
         self.word_dictionary = word_dictionary
-
         self.game_answers = game_answers
         self.tot_game_guesses = []
         self.hint_state = None
@@ -287,7 +294,7 @@ class StrandsGame(StrandsGameBase):
         return self.game_theme
 
     def board(self) -> BoardBase:
-        return Board(self.game_board)
+        return self.game_board
 
     def answers(self) -> list[tuple[str, StrandBase]]:
         return self.game_answers
@@ -369,21 +376,21 @@ class StrandsGame(StrandsGameBase):
                     return (asw_word, True)
 
                 return "Already found"
-        
+
         # check if dictionary word/already found dictionary word
         if board_word in self.word_dictionary:
             # is an unfound word
             if (board_word, strand) not in self.tot_game_guesses:
-                self.tot_game_guesses.append(board_word, strand)
+                self.tot_game_guesses.append((board_word, strand))
 
                 # hint meter updates when this is appended
                 self.new_game_guesses.append((board_word, strand))
-                
+
                 return (board_word, False)
             # already found
             else:
                 return "Already found"
-        
+
         # word is not a valid dictionary word
         else:
             return "Not in word list"
@@ -394,31 +401,29 @@ class StrandsGame(StrandsGameBase):
         hint_level = self.hint_meter()
         hint_threshold = self.hint_threshold()
 
-        # hint level not high enough
-        if hint_level < self.hint_threshold():
+        # check if we can get hint
+        if hint_level < hint_threshold:
             return "No hint yet"
-        
-        # we now know we can get a hint, update hint status
+
+        # update hint status
         if self.hint_state is None:
             self.hint_state = False
+
         elif self.hint_state is False:
             self.hint_state = True
         else:
             return "Use your current hint"
 
+        # since we used a hint, we need to trim the hint meter
+        num_new_hints = (len(self.new_game_guesses)
+                        - hint_threshold)
+        self.new_game_guesses = self.new_game_guesses[:-num_new_hints]
+
+        if hint_level - self.hint_thresh < self.hint_thresh:
+            self.shown_hint_msg = False
+
         # with updated hint state, we can grab our hint
         new_active = self.active_hint()
         assert new_active is not None
-        
-        # since we used a hint, we need to trim the hint meter
-        num_new_hint = (len(self.new_game_guesses)
-                                        - hint_threshold)
-        self.new_game_guesses = self.new_game_guesses[:-num_new_hint]
 
         return new_active
-                
-
-        # NOTE: Clarify what this does tomorrow before submission
-        # case where pre_status can be very large
-        if hint_level - self.hint_thresh < self.hint_thresh:
-            self.shown_hint_msg = False

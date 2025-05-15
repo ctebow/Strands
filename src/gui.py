@@ -539,7 +539,7 @@ class GuiStrands:
                         self.active_hint = False
 
                         return strd_word
-                
+
                 # need to reset either way
                 self.temp_circles = {}
                 self.temp_circs_ordering = []
