@@ -1,4 +1,5 @@
 import sys
+from time import sleep
 from typing import List
 from ui import ArtTUIStub, ArtTUIBase
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
@@ -6,83 +7,59 @@ from stubs import PosStub, StrandStub, BoardStub, StrandsGameStub
 from colorama import Fore, Style, init
 
 
-def step_from_char(ch: str) -> Step:
-    """
-    Convert a single-character direction string to a Step enum value.
-    Raises ValueError if the character is invalid.
-
-    Inputs:
-        ch: single character string representing direction (e.g. 'N', 'S', 'E', 'W', etc.)
-
-    Returns:
-        Step enum corresponding to the character
-    """
-    ch = ch.upper()
-    try:
-        return Step(ch)
-    except ValueError:
-        raise ValueError(f"Invalid step character: {ch}")
-
-
 class TUI:
-    """
-    Text-based UI for the Strands game.
-    """
+    # This is the main text-based interface for the game
 
     def __init__(self, game: StrandsGameBase, art: ArtTUIBase):
-        """
-        Constructor.
-
-        Inputs:
-            game: instance of StrandsGameBase (e.g., StrandsGameStub)
-            art: instance of ArtTUIBase (e.g., ArtTUIStub)
-        """
+        # Takes in the game logic and ASCII art components
         self.game = game
         self.art = art
 
-    def display(self) -> None:
-        """Render the entire TUI screen."""
-        print("\033c", end="")  # Clear screen
+    def display(self, highlight: List[PosBase] = []) -> None:
+        # Renders the screen with theme, hint meter, progress, and the board itself.
+        # If a list of positions is given in `highlight`, those letters get shown in yellow (e.g., during play input)
+        print("\033c", end="")  # clear screen
         self.art.print_top_edge()
 
-        # Theme display
         self.art.print_left_bar()
         print(f"Theme: {self.game.theme()}", end="")
         self.art.print_right_bar()
 
-        # Hint meter display
         self.art.print_left_bar()
-        print(f"Hint meter: {self.game.hint_meter()}", end="")
+        print(f"Hint meter: {self.game.hint_meter()}/{self.game.hint_threshold()}", end="")
         self.art.print_right_bar()
 
-        # Progress display
         self.art.print_left_bar()
         print(f"Found: {len(self.game.found_strands())}/{len(self.game.answers())}", end="")
         self.art.print_right_bar()
 
-        # Blank line
         self.art.print_left_bar()
         print("", end="")
         self.art.print_right_bar()
 
-        # Board display
+        # Build 2D board to print
         board = self.game.board()
         num_rows = board.num_rows()
         num_cols = board.num_cols()
 
-        # Collect all found positions into a set for quick lookup
-        found_positions = set()
+        # Positions of all found strands so far
+        found_positions = []
         for strand in self.game.found_strands():
-            for pos in strand.positions():
-                found_positions.add((pos.r, pos.c))
+            found_positions.extend(strand.positions())
 
+        # Draw board with appropriate coloring
         for r in range(num_rows):
             self.art.print_left_bar()
             for c in range(num_cols):
                 pos = PosStub(r, c)
                 ch = board.get_letter(pos)
-                if (r, c) in found_positions:
+
+                # Highlight if in found strands
+                if pos in found_positions:
                     print(Fore.GREEN + ch + Style.RESET_ALL, end="  ")
+                # Highlight if in currently selected strand (yellow)
+                elif pos in highlight:
+                    print(Fore.YELLOW + ch + Style.RESET_ALL, end="  ")
                 else:
                     print(ch, end="  ")
             self.art.print_right_bar()
@@ -90,32 +67,71 @@ class TUI:
         self.art.print_bottom_edge()
 
     def run(self) -> None:
-        """Main loop for TUI interaction."""
+        # Main loop for interacting with the game via different modes
         self.display()
+
         while True:
-            key = input("Press 'Enter' to submit a guess or 'q' to quit: ").strip().lower()
-            if key == "q":
-                print("Quitting...")
+            print("\nChoose mode: [show] [play] [hint] [quit]")
+            mode = input("Mode: ").strip().lower()
+
+            if mode == "quit":
+                print("Goodbye.")
                 break
-            elif key == "":
-                # For the stub, the submitted strand is ignored anyway,
-                # so just submit any StrandStub with a valid Step list.
-                try:
-                    strand = StrandStub(PosStub(0, 0), [step_from_char("N")])
-                    self.game.submit_strand(strand)
+
+            elif mode == "show":
+                # Just redisplay the screen
+                self.display()
+
+            elif mode == "hint":
+                # Tries to use a hint if the threshold has been met
+                if self.game.hint_meter() >= self.game.hint_threshold():
+                    self.game.use_hint()
+                    print(Fore.MAGENTA + "Hint used!" + Style.RESET_ALL)
                     self.display()
+                else:
+                    print(Fore.RED + "Hint not ready yet." + Style.RESET_ALL)
+
+            elif mode == "play":
+                # User enters a strand via a list of space-separated row,col positions
+                coords = input("Enter positions (e.g. 0,0 0,1 0,2): ").strip().split()
+                try:
+                    if len(coords) < 2:
+                        raise ValueError("Must enter at least 2 positions.")
+
+                    # Parse all positions
+                    pos_objs = []
+                    for coord in coords:
+                        row, col = map(int, coord.split(","))
+                        pos_objs.append(PosStub(row, col))
+
+                    start = pos_objs[0]
+                    steps = []
+                    for i in range(1, len(pos_objs)):
+                        delta_row = pos_objs[i].row() - pos_objs[i - 1].row()
+                        delta_col = pos_objs[i].col() - pos_objs[i - 1].col()
+                        steps.append(Step((delta_row, delta_col)))
+
+                    strand = StrandStub(start, steps)
+
+                    # Show board with user-selected strand highlighted
+                    self.display(pos_objs)
+
+                    # Submit the guess
+                    self.game.submit_strand(strand)
+                    print(Fore.CYAN + "Strand submitted!" + Style.RESET_ALL)
+                    self.display()
+
                 except Exception as e:
-                    print(f"\n{Fore.RED}Game crashed with exception: {e}{Style.RESET_ALL}")
-                    break
+                    print(Fore.RED + f"Invalid input or game error: {e}" + Style.RESET_ALL)
+            else:
+                print(Fore.RED + "Invalid mode." + Style.RESET_ALL)
 
 
 def main() -> None:
-    """
-    Entry point for TUI program.
-    """
-    init(autoreset=True)  # Initialize colorama
-    game: StrandsGameBase = StrandsGameStub("", 0)
-    art: ArtTUIBase = ArtTUIStub(frame_width=2, interior_width=40)
+    # Launches the TUI using stub components (for testing)
+    init(autoreset=True)  # enables colored output
+    game = StrandsGameStub("", 0)
+    art = ArtTUIStub(frame_width=2, interior_width=40)
     tui = TUI(game, art)
     tui.run()
 
