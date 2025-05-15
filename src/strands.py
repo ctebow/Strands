@@ -79,7 +79,6 @@ class Strand(StrandBase):
     followed by a sequence of steps.
     """
     def positions(self) -> list[PosBase]:
-<<<<<<< HEAD
 
         stack = []
         stack.append(self.start)
@@ -105,13 +104,6 @@ class Strand(StrandBase):
         
         return False
 
-=======
-        raise NotImplementedError
-    
-    def is_cyclic(self) -> bool:
-        raise NotImplementedError
-    
->>>>>>> test updates
     def is_folded(self) -> bool:
         connections: set[tuple[PosBase, PosBase]] = set()
         pos_lst = self.positions()
