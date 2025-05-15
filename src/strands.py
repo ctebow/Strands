@@ -422,12 +422,3 @@ class StrandsGame(StrandsGameBase):
         # case where pre_status can be very large
         if hint_level - self.hint_thresh < self.hint_thresh:
             self.shown_hint_msg = False
-
-    
-with open("boards/a-good-roast.txt", encoding="utf-8") as f:
-                lines_lst: list[str] = [line.strip() for line in f.readlines()]
-
-line = lines_lst[2]
-letters = line.split()
-
-print(letters)
