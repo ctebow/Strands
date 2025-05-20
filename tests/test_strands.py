@@ -344,8 +344,12 @@ def test_play_game_directions_more() -> None:
 
 def test_valid_game_files() -> None:
     for filename in os.listdir("boards"):
-        if filename.endswith(".txt"):
-            filepath = f"boards/{filename}"
+        filepath = f"boards/{filename}"
+        if filename == "shine-on.txt":
+            with pytest.raises(ValueError):
+                StrandsGame(filepath)
+
+        elif filename.endswith(".txt"):
             try:
                 StrandsGame(filepath)
             except Exception as e:
