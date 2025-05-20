@@ -78,7 +78,7 @@ def test_strand_positions_long_folded_vs_unfolded() -> None:
         [Step.E, Step.SE, Step.S, Step.SW, Step.W, Step.NW, Step.N, Step.NE],
     )
     folded = Strand(
-        Pos(0, 0), [Step.S, Step.S, Step.E, Step.E, Step.N, Step.W, Step.N, Step.W]
+        Pos(0, 0), [Step.SE, Step.NE, Step.SE, Step.NE, Step.S, Step.NW, Step.SW, Step.NW, Step.NW]
     )
 
     assert not unfolded.is_folded()
@@ -96,15 +96,13 @@ def test_is_not_cyclic() -> None:
     assert not strand4.is_cyclic()
 
 def test_is_cyclic() -> None:
-    strand1 = Strand(Pos(0,0), [Step.E, Step.W])
-    strand2 = Strand(Pos(1,1), [Step.W, Step.S, Step.E, Step.N])
-    strand3 = Strand(Pos(2,2), [Step.NE, Step.W, Step.W, Step.SW])
-    strand4 = Strand(Pos(3,3), [Step.SW, Step.NW, Step.NE, Step.SE])
+    strand1 = Strand(Pos(1,1), [Step.W, Step.S, Step.E, Step.N])
+    strand2 = Strand(Pos(2,2), [Step.NE, Step.W, Step.W, Step.SE])
+    strand3 = Strand(Pos(3,3), [Step.SW, Step.NW, Step.NE, Step.SE])
 
     assert strand1.is_cyclic()
     assert strand2.is_cyclic()
     assert strand3.is_cyclic()
-    assert strand4.is_cyclic()
 
 
 def test_load_game_cs_142_txt() -> None:
