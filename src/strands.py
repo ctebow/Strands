@@ -361,6 +361,10 @@ class StrandsGame(StrandsGameBase):
 
         board_word = "".join(board_letters)
 
+        # check if too short
+        if len(board_word) < 3:
+            return "Too short"
+
         # check if answer/already found answer
         for asw_word, asw_strd in self.answers():
             if board_word == asw_word:
@@ -375,10 +379,6 @@ class StrandsGame(StrandsGameBase):
                     return (asw_word, True)
 
                 return "Already found"
-        
-        # check if too short
-        if len(board_word) < 4:
-            return "Too short"
 
         # check if dictionary word/already found dictionary word
         if board_word in self.word_dictionary:
@@ -430,3 +430,5 @@ class StrandsGame(StrandsGameBase):
         assert new_active is not None
 
         return new_active
+
+game = StrandsGame("boards/shine-on.txt")
