@@ -5,6 +5,30 @@ import sys
 from colorama import Back, Style
 from ui import ArtTUIBase, TUIStub
 
+import click
+
+@click.command()
+@click.option("-a", "--art", required=True, help="Name of art frame to use")
+@click.option("-f", "--frame", type=int, default=2)
+@click.option("-w", "--width", type=int,  default=6)
+@click.option("-h", "--height", type=int,  default=8)
+def cmd(art, frame, width, height):
+    if art:
+        if art == "wrappers":
+            TUIStub(ArtTUIWrappers(frame, width), width, height)
+        elif art == "cat1":
+            TUIStub(ArtTUIChecks(frame, width), width, height)
+        elif art == "cat2":
+            print("Frame type is currently not supported. Input new frame.")
+        elif art == "cat3":
+            print("Frame type is currently not supported. Input new frame.")
+        elif art == "cat4":
+            print("Frame type is currently not supported. Input new frame.")
+        else:
+            print("Frame type is currently not supported. Input new frame.")
+    else:
+        print("frame missing, input frame with <-f> or <--frame>. ")
+
 # setup right now for 3 colors to loop, pretty easy to change by adding more
 COLORS = {0: Back.BLUE, 1: Back.RED, 2: Back.GREEN}
 
@@ -185,18 +209,5 @@ class ArtTUIChecks(ArtTUIBase):
             self._right_start = 0
 
         self._bottom_start += 1
-
-# for grading
-args = sys.argv
-if len(args) == 1:
-    print("not enough arguments")
-elif args[1] == "wrappers":
-    TUIStub(ArtTUIWrappers(int(args[2]), int(args[3])), int(args[3]), int(args[4]))
-elif args[1] == "cat1":
-    TUIStub(ArtTUIChecks(int(args[2]), int(args[3])), int(args[3]), int(args[4]))
-elif args[1] == "cat2":
-    print("cat2 pattern implemented in art_gui.py")
-elif args[1] == "cat3":
-    print("cat3 pattern implemented in art_gui.py")
-elif args[1] == "cat4":
-    print("cat4 design implemented in art_gui.py")
+if __name__ == "__main__":
+    cmd()

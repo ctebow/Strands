@@ -6,6 +6,34 @@ import pygame
 import pygame.gfxdraw
 import math
 from ui import ArtGUIBase, GUIStub
+import click
+
+@click.command()
+@click.option("-a", "--art", required=True, help="Name of art frame to use")
+@click.option("-f", "--frame", type=int, default=0)
+@click.option("-w", "--width", type=int,  default=500)
+@click.option("-h", "--height", type=int,  default=500)
+def cmd(art, frame, width, height):
+    if art:
+        if art == "9slices":
+            GUIStub(ArtGUI9Slice(int(frame)),
+            width, height).run_event_loop()
+        elif art == "cat1":
+            print("This category is not supported. Input new frame")
+        elif art == "cat2":
+            GUIStub(ArtGUIHarlequin(int(frame)),
+            width, height).run_event_loop()
+        elif art == "cat3":
+            GUIStub(ArtGUIHoneycomb(int(frame)),
+            width, height).run_event_loop()
+        elif art == "cat4":
+            GUIStub(ArtGUIDrawStrands(int(frame)),
+            width, height).run_event_loop()
+        else:
+            print("Frame type is currently not supported. Input new frame.")
+    else:
+        print("frame missing, input frame with <-f> or <--frame>. ")
+
 
 ROOT_THREE = 1.732
 
@@ -284,18 +312,5 @@ class ArtGUIDrawStrands(ArtGUIBase):
                                              self.RADIUS, (r, g, b))
             b += 10
 
-# for grading
-args = sys.argv
-if args[1] == "9slices":
-    GUIStub(ArtGUI9Slice(int(sys.argv[2])), 
-            int(sys.argv[3]), int(sys.argv[4])).run_event_loop()
-elif args[1] == "cat1":
-    print("cat1 pattern implemented in art_tui.")
-elif args[1] == "cat2":
-    GUIStub(ArtGUIHarlequin(int(sys.argv[2])), 
-            int(sys.argv[3]), int(sys.argv[4])).run_event_loop()
-elif args[1] == "cat3":
-    GUIStub(ArtGUIHoneycomb(int(sys.argv[2])), 
-            int(sys.argv[3]), int(sys.argv[4])).run_event_loop()
-elif args[1] == "cat4":
-    GUIStub(ArtGUIDrawStrands(0), 1000, 1000).run_event_loop()
+if __name__ == "__main__":
+    cmd()
