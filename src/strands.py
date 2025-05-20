@@ -430,5 +430,3 @@ class StrandsGame(StrandsGameBase):
         assert new_active is not None
 
         return new_active
-
-game = StrandsGame("boards/shine-on.txt")

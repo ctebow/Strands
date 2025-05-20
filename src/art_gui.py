@@ -298,4 +298,4 @@ elif args[1] == "cat3":
     GUIStub(ArtGUIHoneycomb(int(sys.argv[2])), 
             int(sys.argv[3]), int(sys.argv[4])).run_event_loop()
 elif args[1] == "cat4":
-    GUIStub(ArtGUIDrawStrands(0), 500, 500).run_event_loop()
+    GUIStub(ArtGUIDrawStrands(0), 1000, 1000).run_event_loop()
