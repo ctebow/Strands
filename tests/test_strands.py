@@ -176,23 +176,23 @@ def test_play_game_cs_142_once() -> None:
 
 def test_play_game_cs_142_twice() -> None:
     game = StrandsGame("boards/cs-142.txt")
-    game.submit_strand(Strand(Pos(1, 1), []))
-    game.submit_strand(Strand(Pos(2, 4), []))
-    game.submit_strand(Strand(Pos(0, 3), []))
-    game.submit_strand(Strand(Pos(1, 0), []))
+    game.submit_strand(Strand(Pos(1, 1), [Step.E, Step.E, Step.NE, Step.S]))
+    game.submit_strand(Strand(Pos(2, 4), [Step.W, Step.W]))
+    game.submit_strand(Strand(Pos(0, 3), [Step.W, Step.W, Step.W]))
+    game.submit_strand(Strand(Pos(1, 0), [Step.S, Step.E]))
     assert game.game_over()
 
 
 def test_play_game_cs_142_more() -> None:
-    game = StrandsGame("boards/cs-142.txt")
+    game = StrandsGame("boards/cs-142.txt", 0)
     assert game.use_hint() == (0, False)
     assert game.use_hint() == (0, True)
     assert game.use_hint() == "Use your current hint"
-    assert game.submit_strand(Strand(Pos(0, 3), [])) == ("cmsc", True)
-    assert game.submit_strand(Strand(Pos(1, 0), [])) == ("one", True)
+    assert game.submit_strand(Strand(Pos(0, 3), [Step.W, Step.W, Step.W])) == ("cmsc", True)
+    assert game.submit_strand(Strand(Pos(1, 0), [Step.S, Step.E])) == ("one", True)
     assert game.use_hint() == (2, False)
-    assert game.submit_strand(Strand(Pos(1, 1), [])) == ("forty", True)
-    assert game.submit_strand(Strand(Pos(2, 4), [])) == ("two", True)
+    assert game.submit_strand(Strand(Pos(1, 1), [Step.E, Step.E, Step.NE, Step.S])) == ("forty", True)
+    assert game.submit_strand(Strand(Pos(2, 4), [Step.W, Step.W])) == ("two", True)
     assert game.game_over()
 
 def test_overlapping() -> None:
@@ -301,7 +301,7 @@ def test_play_game_directions_three_times() -> None:
    assert game.submit_strand(Strand(Pos(1, 3), [Step.W, Step.W, Step.W])) == ("west", True)
    assert game.submit_strand(Strand(Pos(2, 0), [Step.S, Step.S, Step.S, Step.S])) == ("south", True)
    assert game.submit_strand(Strand(Pos(6, 1), [Step.N, Step.N, Step.N, Step.N])) == ("north", True)
-   assert game.submit_strand(Strand(Pos(3, 3), [Step.S, Step.NE, Step.S, Step.S, Step.S, Step.NW, Step.S, Step.SE, Step.W])) == ("directions", True)
+   assert game.submit_strand(Strand(Pos(2, 2), [Step.S, Step.NE, Step.S, Step.S, Step.S, Step.NW, Step.S, Step.SE, Step.W])) == ("directions", True)
    
    found = {word for word, strand in game.answers()}
    assert "directions" in found
@@ -314,7 +314,7 @@ def test_play_game_directions_three_times() -> None:
     assert game.submit_strand(Strand(Pos(2, 0), [Step.S, Step.S, Step.S, Step.S])) == ("south", True)
     assert game.submit_strand(Strand(Pos(6, 1), [Step.N, Step.N, Step.N, Step.N])) == ("north", True)
 
-    result = game.submit_strand(Strand(Pos(3, 3), [
+    result = game.submit_strand(Strand(Pos(2, 2), [
         Step.S, Step.NE, Step.S, Step.S, Step.S,
         Step.NW, Step.S, Step.SE, Step.W
     ]))
@@ -332,7 +332,7 @@ def test_play_game_directions_more() -> None:
     assert game.submit_strand(Strand(Pos(2, 0), [Step.S, Step.S, Step.S, Step.S])) == ("south", True)
     assert game.submit_strand(Strand(Pos(6, 1), [Step.N, Step.N, Step.N, Step.N])) == ("north", True)
 
-    result = game.submit_strand(Strand(Pos(3, 3), [
+    result = game.submit_strand(Strand(Pos(2, 2), [
         Step.S, Step.NE, Step.S, Step.S, Step.S,
         Step.NW, Step.S, Step.SE, Step.W
     ]))
