@@ -196,6 +196,9 @@ class StrandsGameFake(StrandsGameBase):
         self.hint_word = self.game_answers[0][0]
         self.new_game_guesses = []
 
+    def get_hint_word(self) -> str:
+        return self.hint_word
+
     def theme(self) -> str:
         return self.game_theme
 

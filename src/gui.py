@@ -178,11 +178,15 @@ class GuiStrands:
                             if click_dis_sq <= rad**2:
                                 strd_word = self.handle_guess_clicks(ky)
 
-                                # only reset hint circle on correct guess
-                                if (strd_word is not None and
-                                    strd_word in
-                                    [word for word, _ in self.game.answers()]
-                                    ):
+                                # only reset hint circle on correct same guess
+                                # if (strd_word is not None and
+                                #     strd_word in
+                                #     [word for word, _ in self.game.answers()]
+                                #     ):
+                                #     self.hint_circles = {}
+
+                                if (strd_word is not None and strd_word ==
+                                    self.game.get_hint_word()):
                                     self.hint_circles = {}
 
             if self.game_mode == "show" and self.lett_locs:
@@ -536,7 +540,9 @@ class GuiStrands:
                         # reset after attempt
                         self.temp_circles = {}
                         self.temp_circs_ordering = []
-                        self.active_hint = False
+
+                        if strd_word == self.game.get_hint_word():
+                            self.active_hint = False
 
                         return strd_word
 
