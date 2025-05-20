@@ -167,10 +167,10 @@ cmsc 2 4 w w w
 
 def test_play_game_cs_142_once() -> None:
     game = StrandsGame("boards/cs-142.txt")
-    assert game.submit_strand(Strand(Pos(0, 3), [])) == ("cmsc", True)
-    assert game.submit_strand(Strand(Pos(1, 0), [])) == ("one", True)
-    assert game.submit_strand(Strand(Pos(1, 1), [])) == ("forty", True)
-    assert game.submit_strand(Strand(Pos(2, 4), [])) == ("two", True)
+    assert game.submit_strand(Strand(Pos(0, 3), [Step.W, Step.W, Step.W])) == ("cmsc", True)
+    assert game.submit_strand(Strand(Pos(1, 0), [Step.S, Step.E])) == ("one", True)
+    assert game.submit_strand(Strand(Pos(1, 1), [Step.E, Step.E, Step.NE, Step.S])) == ("forty", True)
+    assert game.submit_strand(Strand(Pos(2, 4), [Step.W, Step.W])) == ("two", True)
     assert game.game_over()
 
 
