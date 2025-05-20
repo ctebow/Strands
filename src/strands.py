@@ -15,9 +15,12 @@ class Pos(PosBase):
 
     # may look back at this versus old version
     def take_step(self, step: Step) -> PosBase:
+
         c = self.c
         r = self.r
 
+
+          # value method from official python website Enum documentation
         if step == step.W:
             c -= 1
         elif step == step.E:
