@@ -8,6 +8,7 @@ import math
 from ui import ArtGUIBase, GUIStub
 import click
 
+
 @click.command()
 @click.option("-a", "--art", required=True, help="Name of art frame to use")
 @click.option("-f", "--frame", type=int, default=0)

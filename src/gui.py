@@ -10,7 +10,7 @@ import pygame
 from fakes import Pos, StrandFake, BoardFake, StrandsGameFake
 from ui import ArtGUIBase, ArtGUIStub
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
-
+from art_gui import ArtGUI9Slice, ArtGUIHarlequin, ArtGUIHoneycomb, ArtGUIDrawStrands
 Loc: TypeAlias = tuple[float, float]
 
 FONT_SIZE = 24
@@ -204,7 +204,7 @@ class GuiStrands:
         the game board.
         """
         # fills entire background with grey
-        frame: ArtGUIBase = ArtGUIStub(FRAME_WIDTH)
+        frame: ArtGUIBase = ArtGUIHoneycomb(FRAME_WIDTH)
         frame.draw_background(self.surface)
 
         interior = pygame.Surface((self.interior_wdth, self.interior_hght))
