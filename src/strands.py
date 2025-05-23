@@ -299,12 +299,12 @@ class StrandsGame(StrandsGameBase):
     def board(self) -> BoardBase:
         return self.game_board
 
-    def answers(self) -> list[tuple[str, StrandBase]]:
+    def answers(self) -> list[tuple[str, Strand]]:
         return self.game_answers
 
     def found_strands(self) -> list[StrandBase]:
 
-        found_strands: list[StrandBase] = []
+        found_strands: list[Strand] = []
         for gus_word, _ in self.tot_game_guesses:
             for ans_word, ans_strd in self.game_answers:
                 if gus_word == ans_word:
@@ -400,6 +400,13 @@ class StrandsGame(StrandsGameBase):
 
     def use_hint(self) -> tuple[int, bool] | str:
 
+
+        # check if we need to reset hint state to false (NEW LOGIC)
+        if self.hint_word:
+            for tup in self.tot_game_guesses:
+                if self.hint_word == tup[0]:
+                    self.hint_state = None
+                    break
 
         hint_level = self.hint_meter()
         hint_threshold = self.hint_threshold()
