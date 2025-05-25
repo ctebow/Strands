@@ -291,6 +291,9 @@ class StrandsGame(StrandsGameBase):
         self.hint_word = self.game_answers[0][0]
         self.new_game_guesses = []
 
+    def get_hint_word(self) -> str:
+        return self.hint_word
+
     def theme(self) -> str:
         return self.game_theme
 
@@ -397,7 +400,6 @@ class StrandsGame(StrandsGameBase):
             return "Not in word list"
 
     def use_hint(self) -> tuple[int, bool] | str:
-
 
         # check if we need to reset hint state to false (NEW LOGIC)
         if self.hint_word:

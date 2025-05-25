@@ -7,7 +7,7 @@ from typing import TypeAlias
 
 import pygame
 
-from fakes import Pos, StrandFake, BoardFake, StrandsGameFake
+from strands import Pos, Strand, Board, StrandsGame
 from ui import ArtGUIBase, ArtGUIStub
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
 from art_gui import ArtGUI9Slice, ArtGUIHarlequin, ArtGUIHoneycomb, ArtGUIDrawStrands
@@ -65,7 +65,7 @@ class GuiStrands:
         pygame.init()
 
         _, game_mode, brd_filename = tuple(sys.argv)
-        self.game: StrandsGameBase = StrandsGameFake(brd_filename)
+        self.game: StrandsGameBase = StrandsGame(brd_filename)
         board = self.game.board()
 
         # dynamically setting up factors for window dimensions
@@ -519,7 +519,7 @@ class GuiStrands:
                     step_lst.append(Step(former.step_to(i)))
                     former = i
 
-                strd: StrandBase = StrandFake(start, step_lst)
+                strd: StrandBase = Strand(start, step_lst)
 
                 # current output of status of strand
                 msg = self.game.submit_strand(strd)
