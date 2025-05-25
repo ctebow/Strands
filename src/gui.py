@@ -6,6 +6,9 @@ import sys
 from typing import TypeAlias
 
 import pygame
+import os
+import random
+import click
 
 from strands import Pos, Strand, Board, StrandsGame
 from ui import ArtGUIBase, ArtGUIStub
@@ -28,7 +31,9 @@ class GuiStrands:
     and the hint meter current value.
 
     Moves from Stub to Fake implementation. Supports
-    Command-Line arguments for Play and Show mode.
+    Click-based command-line arguments
+    for Play and Show mode, as well as for
+    the desired hint threshold and frame type.
 
     Now includes interactions to select and submit
     strands via a mouse input, as well as input
@@ -47,7 +52,7 @@ class GuiStrands:
     active_hint: bool
     temp_circs_ordering: list[tuple[int, int]]
     game: StrandsGameBase
-    game_mode: str
+    show: bool
     font: pygame.font.Font
 
     # dictionary where key is index position of letter,
@@ -58,14 +63,13 @@ class GuiStrands:
     # list of active lines, a list of tuples containing start and end positions
     strd_lines: list[tuple[Loc, Loc]]
 
-    def __init__(self) -> None:
+    def __init__(self, show: bool, brd_filename: str, hint_threshold: int) -> None:
         """
         Initializes the GUI application.
         """
         pygame.init()
 
-        _, game_mode, brd_filename = tuple(sys.argv)
-        self.game: StrandsGameBase = StrandsGame(brd_filename)
+        self.game: StrandsGameBase = StrandsGame(brd_filename, hint_threshold)
         board = self.game.board()
 
         # dynamically setting up factors for window dimensions
@@ -83,12 +87,10 @@ class GuiStrands:
                         )
         window_height = grid_dim * (board.num_rows() + 1) + 2 * FRAME_WIDTH
 
-        if game_mode == "show":
-            self.game_mode = "show"
-        elif game_mode == "play":
-            self.game_mode = "play"
+        if show:
+            self.show = True
         else:
-            raise ValueError("Unsupported Play Type")
+            self.show = False
 
         pygame.display.set_caption(self.game.theme())
 
@@ -147,7 +149,7 @@ class GuiStrands:
                         sys.exit()
 
                     if (
-                        self.game_mode == "play" and
+                        not self.show and
                         self.lett_locs and
                         not self.game.game_over()
                         ):
@@ -162,7 +164,7 @@ class GuiStrands:
 
                             self.handle_hint_conditions()
 
-                if (self.game_mode == "play" and
+                if (not self.show and
                     self.lett_locs and not
                     self.game.game_over()
                     ):
@@ -182,7 +184,7 @@ class GuiStrands:
                                     self.game.get_hint_word()):
                                     self.hint_circles = {}
 
-            if self.game_mode == "show" and self.lett_locs:
+            if self.show and self.lett_locs:
                 for _, show_strd in self.game.answers():
                     self.game.submit_strand(show_strd)
                     self.append_found_solutions(self.col_width / 2)
@@ -190,7 +192,7 @@ class GuiStrands:
             # shows application window
             self.draw_window()
 
-            if (self.game_mode == "play" and
+            if (not self.show and
                 self.game.game_over() and
                 end == 0
                 ):
@@ -604,5 +606,38 @@ class GuiStrands:
                 rad: float = width / 2
                 self.circles[center] = rad
 
+# Click Implementation
+@click.command()
+@click.option("--show", is_flag=True, help="Pass if you desire completed board.")
+@click.option("-g", "--game", "game", type=str, default=None,
+              help="Loads boards/GAME.txt if passed, otherwise random.")
+@click.option("-h", "--hint", "hint_threshold", type=int, default=3,
+              help="Loads desired hint threshold.")
+
+# @click.option("-f", "--frame", type=int, default=0)
+# @click.option("-w", "--width", type=int,  default=500)
+# @click.option("-h", "--height", type=int,  default=500)
+
+def main(show: bool, game: str | None, hint_threshold: int):
+    '''
+    Main function to fun the GUI including clicker
+    functionality.
+
+    Raises FileNotFoundError if no .txt files in boards directory.
+    '''
+    if hint_threshold == 0:
+        raise ValueError("Choose a positive int threshold.")
+
+    if game is None:
+        # condition ensuring os.path.join works later
+        board_fs = [brd for brd in os.listdir("boards") if brd.endswith(".txt")]
+        if not board_fs:
+            raise FileNotFoundError("No .txt files in boards directory.")
+        brd_filename = os.path.join("boards", random.choice(board_fs))
+    else:
+        brd_filename = os.path.join("boards", f"{game}.txt")
+
+    GuiStrands(show, brd_filename, hint_threshold)
+
 if __name__ == "__main__":
-    GuiStrands()
+    main()

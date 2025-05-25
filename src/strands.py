@@ -205,7 +205,7 @@ class StrandsGame(StrandsGameBase):
     new_game_guesses: list[tuple[str, Strand]]
     word_dictionary: list[str]
 
-    def __init__(self, game_file: str | list[str], hint_threshold: int = 3):
+    def __init__(self, game_file: str | list[str], hint_threshold: int):
 
         # process raw txt file
         if isinstance(game_file, str):
@@ -425,9 +425,7 @@ class StrandsGame(StrandsGameBase):
             return "Use your current hint"
 
         # since we used a hint, we need to trim the hint meter
-        num_new_hints = (len(self.new_game_guesses)
-                        - hint_threshold)
-        self.new_game_guesses = self.new_game_guesses[:-num_new_hints]
+        self.new_game_guesses = self.new_game_guesses[hint_threshold:]
 
         if hint_level - self.hint_thresh < self.hint_thresh:
             self.shown_hint_msg = False
