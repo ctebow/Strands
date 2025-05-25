@@ -198,9 +198,7 @@ class StrandsGame(StrandsGameBase):
     game_board: Board
     game_answers: list[tuple[str, Strand]]
 
-    tot_game_guesses: list[tuple[str, Strand]] # only
-                                               # includes strand guesses,
-                                               # since dict not implmeneted
+    tot_game_guesses: list[tuple[str, Strand]]
     hint_state: None | bool
     hint_word: str
     # guesses made after hint cleared
@@ -299,7 +297,7 @@ class StrandsGame(StrandsGameBase):
     def board(self) -> BoardBase:
         return self.game_board
 
-    def answers(self) -> list[tuple[str, Strand]]:
+    def answers(self) -> list[tuple[str, StrandBase]]:
         return self.game_answers
 
     def found_strands(self) -> list[StrandBase]:
