@@ -1,0 +1,19 @@
+"Boogie woogie woogie"
+
+R C A L T L
+E A M I O O
+N A N O S O
+E S E F E N
+L T U D I O
+W O H A T O
+B B N O L M
+E L C E C O
+
+wobble      6 1  e s w se w
+hustle      6 3  n nw s w n
+macarena    2 3  n w s nw s s e
+footloose   4 4  n ne n e s s w s
+locomotion  7 5  w se e n n w n e n
+linedance   1 4  s sw s se s sw s e
+
+https://www.nytimes.com/games/strands (5/14/2025)

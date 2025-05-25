@@ -1,0 +1,19 @@
+"A little respect"
+
+R E R E C D
+U T A T H E
+E S T C A R
+M A N A R C
+S T R E E T
+E R T A N G
+P U T D I S
+N O I N A T
+
+name        4 3  w w n
+stature     3 2  e n w w n e
+standing    7 6  s w w n e n e
+character   1 5  s s s w n n n w
+reputation  6 2  w s e ne e sw s w w
+streetcred  5 1  e e e e e n n n n
+
+https://www.nytimes.com/games/strands (5/12/2025)
