@@ -12,6 +12,6 @@ Enhancements:
 although enhancement for Play mode is more extensive. I've added sounds
 from https://kenney.nl/assets/category:Audio?search=&sort=update
 for starting the game, quitting/exiting, clicking, clearing by
-hitting escape, submitting a too short or repeated word,
+hitting escape, submitting a too short, non-dictionary, or repeated word,
 and for both submitting a new dictionary and new
 strand word. Enjoy!

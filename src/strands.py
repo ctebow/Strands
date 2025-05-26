@@ -531,6 +531,8 @@ class StrandsGame(StrandsGameBase):
 
         # word is not a valid dictionary word
         else:
+            error_sound = pygame.mixer.Sound("assets/error_008.ogg")
+            error_sound.play()
             return "Not in word list"
 
     def use_hint(self) -> tuple[int, bool] | str:
