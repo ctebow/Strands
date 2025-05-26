@@ -261,10 +261,7 @@ class StrandsGame(StrandsGameBase):
                 lines_lst: list[str] = [line.strip() for line in f.readlines()]
         else:
             lines_lst = [line.strip() for line in game_file]
-
-
-        self.game_theme = lines_lst[0]
-
+        
         # check if game theme exists:
         if self.game_theme == "":
             raise ValueError
@@ -338,6 +335,7 @@ class StrandsGame(StrandsGameBase):
         self.hint_state = None
         self.hint_word = self.game_answers[0][0]
         self.new_game_guesses = []
+        self.game_theme = lines_lst[0]
         
         # assume in Play mode
         self.show_mode = False

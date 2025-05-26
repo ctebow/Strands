@@ -1,12 +1,28 @@
 """
-Solver for StrandsGame. Given a game file with only a board, lists the 
-each answer word with the accompanying Strand class. Makes use of a Trie to 
-store dictionary words for efficient searching. 
+Solver for StrandsGame. This file contains a working solver, that when given a 
+game board and strings for answers, returns the strand object with starting
+positions and steps for each answer. 
 
-Resources Consulted:
+This file also contains a partially complete general solver, which when given
+only a game board, returns all answer strands.
+
+To run the working solver, run "src/solver.py"
+
+To see the progress on the general solver, run "src/solver.py --type general"
+
+Resources Consulted: (for general solver)
 https://polaris000.medium.com/understanding-prefix-trees-13da74b3cafb
+https://stackoverflow.com/questions/8508799/bit-masking-in-python
 
-General Idea:
+
+For the Solver given answer strings:
+- Use a Trie object to efficiently compare all possible word combinations in 
+board with all dictionary words, return all the matches.
+- Convert each possible word into a strand
+- Compare with answer strings and find matching strands to solve the board. 
+
+For the general solver:
+
 - Generate a list of all possible words in the given board.
     - Do this using a Trie data structure to efficiently add words
 
@@ -27,11 +43,59 @@ different combos.
 until I can get full coverage. If I get multiple full coverage words I can 
 eliminate based on theme score.
     
-
+- Notes: 
+    - Might need to use semantic vectors to narrow word choices down, I am
+currently struggling with getting rid of "good" words that aren't actually 
+theme words.
+    - I also should recurse more efficiently when placing the top 50 words.
 """
-import copy
 from strands import Pos, Board, Strand, Step
-from itertools import permutations
+import click
+
+@click.command()
+@click.option("-t", "--type", required=False, help="Use General Solver")
+@click.option("-g", "--game", required=True, help="Input game board name")
+def cmd(type, game) -> None:
+    """
+    Sets up command line arguments. 
+    """
+    if type:
+        if type == "general":
+            solver = Solver(game)
+            raw = solver.all_words()
+            sorts = solver.sort_words(raw)
+            placed = solver.place_top_50(sorts, 6)
+            ans = solver.greedy_place(placed)
+            print("BEST BOARDS AS OF NOW: LONGEST STRANDS PLACED + EXTRA")
+            for board in ans:
+                print(board.keys())
+                print("")
+        else:
+            print("Specify <general> to run general")
+            
+    else:
+        solver = Solver(game)
+        words = solver.all_words()
+        all_strands = solver.convert_to_strand(words)
+        strands = solver.get_answer_strands(all_strands)
+
+        # converting from objects to something readable
+
+        result = {}
+        for word in strands.keys():
+            start = strands[word].start 
+            positions = strands[word].positions()
+            pos_lst = []
+            for position in positions:
+                r = position.r
+                c = position.c
+                pos_lst.append((r, c))
+            r = start.r
+            c = start.c
+            result[word] = ((r, c), pos_lst)
+        print(result)
+
+# for navigating around the gameboard and building strands
 PERMS = {(-1, -1): Step.NW, 
         (-1, 0): Step.N, 
         (-1, 1): Step.NE, 
@@ -42,7 +106,10 @@ PERMS = {(-1, -1): Step.NW,
         (1, 1): Step.SE}
 
 class TrieNode:
-
+    """
+    Node for Trie class. Stores a character and all unique characters that come
+    after the character in a set of words. 
+    """
     children: dict["TrieNode"]
     char: str
     is_end: bool
@@ -53,7 +120,11 @@ class TrieNode:
         self.is_end = False
 
 class Trie:
-
+    """
+    Root of the Trie. Stores tree nodes that describe the words in a certain set
+    of words. Each node has a unique character and a dictionary of unique 
+    characters that may come after it in any given word. 
+    """
     def __init__(self):
         self.root = TrieNode()
 
@@ -69,11 +140,11 @@ class Trie:
             node = node.children[char]
         
         node.is_end = True    
-
+            
 class Mask:
     """
-    Integer mask intended to represent a typical strands gameboard. More
-    efficient than using a list to keep track of positions
+    FOR GENERAL SOLVER.Integer mask intended to represent a typical strands 
+    gameboard. More efficient than using a list to keep track of positions.
     """   
 
     def __init__(self, rows, cols):
@@ -131,7 +202,7 @@ class Mask:
 
 class HashPos(Pos):
     """
-    Child class of Pos to make it hashable. 
+    FOR GENERAL SOLVER. Child class of Pos to make it hashable. 
     """
     def __eq__(self, other):
         if not isinstance(other, Pos):
@@ -145,17 +216,28 @@ class HashPos(Pos):
 
 class HashStrand(Strand):
     """
-    Child class of Strand to make it hashable.
+    FOR GENERAL SOLVER. Child class of Strand to make it hashable.
     """
 
     def __hash__(self):
         return hash((self.start, tuple(self.steps)))
-
-
+    
 class Solver:
+    """
+    Solver class. Supports solving any board for two cases:
 
+    - Answer strings are given. Uses all_words, sort_words, and get_answer_words
+    to return the answer strands
+
+    - Only the board and theme are given. Uses all_words, sort_words, place_top_
+    50, greedy_place, and more methods to be updated to try and fit all possible
+    strands to a given game board. Incomplete, able to get three or four answers
+    each time as of now. 
+    """
+    game_theme: str
     game_file: str | list[str]
     board_lst: list[list[str]]
+    answers: list[str]
     board: Board
     filtered: list[Strand]
     dictionary: list[str]
@@ -175,12 +257,23 @@ class Solver:
 
         board_lst: list[list[str]] = []
 
-        # assumes one space before grid in valid file
-        for _, r in enumerate(lines_lst[2:]):
+        # assumes one space before grid in valid file --> get board
+        for idx, r in enumerate(lines_lst[2:]):
             alph_lst = [alph.lower() for alph in r.split()]
             if r == "":
+                board_stp = idx + 3
                 break
             board_lst.append(alph_lst)
+
+        answers = []
+        # get only the answer strings
+        for ind, r in enumerate(lines_lst[board_stp:]):
+            if r == "":
+                break
+        
+            full = r.split()
+            word = full[0].lower()
+            answers.append(word)
 
         # get word list --> to be put in Trie. 
         with open("assets/web2.txt", encoding="utf-8") as f:
@@ -197,12 +290,27 @@ class Solver:
         self.dictionary = word_dictionary
         self.frequency_chart = frequency_chart
         self.board_lst = board_lst
+        self.answers = answers
         self.filtered = []
         self.board = Board(board_lst)
         self.cols = len(board_lst[0])
         self.rows = len(board_lst)
         self.board_size = self.cols * self.rows
 
+    def convert_to_strand(self,
+                 raw: dict[str, tuple[tuple[int, int], Step]]) -> list[Strand]:
+        """
+        GIven a dictionary of a word and its raw strand representation, convert
+        it into a list of Strands
+        """
+
+        all_strands = []
+        for word in raw.values():
+            start, steps = word
+            r, c = start
+            all_strands.append(HashStrand(HashPos(r, c), list(steps)))
+
+        return all_strands
 
     def all_words(self) -> dict[str, tuple[tuple[int, int], Step]]:
         """
@@ -233,6 +341,7 @@ class Solver:
                         all_words[path] = (start, steps[:-1])
 
 
+
             # double check indices and if we've been here
             if not (0 <= r < self.rows and 0 <= c < self.cols):
                 return None
@@ -261,13 +370,6 @@ class Solver:
                 all_words_dfs(r, c, trie.root, "", (r, c), ())
         
         return all_words
-    
-    def score_word(self, word: str) -> tuple[str, int]:
-        """
-        Scores words based on the game theme. Useful for narrowing down 
-        the list of words even further. 
-        """
-
 
     
     def sort_words(self, raw_words: dict[str, tuple[tuple[int, int],
@@ -288,11 +390,7 @@ class Solver:
                 top_50k.pop(word)
 
         # sort and transform word list into strands
-        all_strands = []
-        for word in top_50k.values():
-            start, steps = word
-            r, c = start
-            all_strands.append(HashStrand(HashPos(r, c), list(steps)))
+        all_strands = self.convert_to_strand(top_50k)
         
         # remove invalid strands, sort largest to smallest
         filtered = list(filter(lambda x: not (x.is_cyclic() or x.is_folded()),
@@ -302,7 +400,23 @@ class Solver:
 
         return filtered
     
-    
+    def get_answer_strands(self, all_strands: list[Strand]) -> list[Strand]:
+        """
+        For a solver implementation that assumes the solver knows each answer
+        word string, but does not know it's starting position or steps.
+        Takes a filtered list of all possible, valid strands on the board and
+        then checks if starting position matches. Returns all matches.
+        """
+
+        answers = self.answers
+
+        found_answers = {}
+        for strand in all_strands:
+            word = self.board.evaluate_strand(strand)
+            if word in answers:
+                found_answers[word] = strand
+
+        return found_answers
 
     def can_place(self, strand: Strand, mask: Mask) -> bool:
         """
@@ -357,15 +471,15 @@ class Solver:
         Given a list of probable, largest words, place the top 50 and fit from
         there. 
         """
-        # after we place the top idk 50 combos of words, we can go from those
-        # boards
-
-        # I think control flow should be to try it with a high threshold and then
-        # narrow down if I get zero matches. 
+        # initialize mask
         mask = Mask(self.rows, self.cols)
+
+        # take top 50 "best" words
         top_50 = words[:50]
+
+        # accumulate promising boards
         boards = set()
-        seen = set()
+
 
         def placer_dfs(strand: Strand, placed: tuple[Strand], mask: Mask, threshold):
             """
@@ -399,10 +513,12 @@ class Solver:
         if board is full. If not, pop one of the original members and try 
         again. Each word that can get placed will be noted. 
         """
-
+        # set up collectors
         all_words = self.filtered
         placeable = set()
         better_boards = []
+
+        # go through boards once, try to place words that can still be placed
         for board in boards:
             mask = self.create_mask(board)
             board_lst = list(board)
@@ -411,22 +527,20 @@ class Solver:
                     self.place(strand, mask)
                     board_lst.append(strand)
                     placeable.add(strand)
-            if mask.is_full() or len(board_lst) > 6:
+            if mask.is_full() or len(board_lst) > 6: # threshold for good place
                 better_boards.append(board_lst)
 
-        return placeable, better_boards, len(placeable), len(better_boards)
-            
+        # return the better boards and the other words that can be placed
+        result = []
+        for board in better_boards:
+            dct = {}
+            for strand in board:
+                word = self.board.evaluate_strand(strand)
+                dct[word] = strand
+            result.append(dct)
+
+        return result
 
 
-
-
-
-solver = Solver("boards/fore.txt")
-mask = Mask(8, 6)
-raw = solver.all_words()
-strands = solver.sort_words(raw)
-boards = solver.place_top_50(strands, 6)
-tup = solver.greedy_place(boards)
-p, b, lp, lb = tup
-for strand in p:
-    print(solver.board.evaluate_strand(strand))
+if __name__ == "__main__":
+    cmd()
