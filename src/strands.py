@@ -102,11 +102,11 @@ class Strand(StrandBase):
         ind_lst = []
         for pos in pos_lst:
             ind_lst.append((pos.r, pos.c))
-        
+
         # sets guarantee unique elements
         if len(ind_lst) != len(set(ind_lst)):
             return True
-        
+
         return False
 
     def is_folded(self) -> bool:
@@ -126,14 +126,14 @@ class Strand(StrandBase):
             stop = Pos(ed[0], ed[1])
             # checking if diagonal connection
             if start.step_to(stop) in {Step.NW, Step.SW, Step.NE, Step.SE}:
-                
+
                 # two possible alternative diagonals
                 d_1 = (st[0], ed[1])
                 d_2 = (ed[0], st[1])
 
                 if (d_1, d_2) in connections or (d_2, d_1) in connections:
                     return True
-        
+
         return False
 
 class Board(BoardBase):
@@ -189,7 +189,7 @@ class Board(BoardBase):
             msg += self.get_letter(pos)
 
         return msg
-    
+
     def find_neighbors(self, pos: PosBase) -> set[tuple[int, int]]:
         """
         Helper function for the DICTIONARY-WORDS
@@ -262,12 +262,12 @@ class StrandsGame(StrandsGameBase):
                 lines_lst: list[str] = [line.strip() for line in f.readlines()]
         else:
             lines_lst = [line.strip() for line in game_file]
-        
+
         self.game_theme = lines_lst[0]
         # check if game theme exists:
         if self.game_theme == "":
             raise ValueError
-        
+
         self.hint_thresh = hint_threshold
         self.shown_hint_msg = False
 
@@ -305,9 +305,9 @@ class StrandsGame(StrandsGameBase):
         if self.game_board.letters == []:
             raise ValueError
         # check if no space between board and answers
-        if game_answers == []:
+        if not game_answers:
             raise ValueError
-        
+
         tot_ans_len = 0
         for answer in game_answers:
             # check answer longer than three letters
@@ -317,11 +317,11 @@ class StrandsGame(StrandsGameBase):
             # check answers start on board and strand object actually gives word
             if answer[0] != self.game_board.evaluate_strand(answer[1]):
                 raise ValueError
-            
+
             tot_ans_len += len(answer[0])
-        
+
         # make sure answers fill board
-        if tot_ans_len != (self.game_board.num_cols() * 
+        if tot_ans_len != (self.game_board.num_cols() *
                            self.game_board.num_rows()):
             print("answers do not fill board")
             raise ValueError
@@ -337,7 +337,7 @@ class StrandsGame(StrandsGameBase):
         self.hint_state = None
         self.hint_word = self.game_answers[0][0]
         self.new_game_guesses = []
-        
+
         # assume in Play mode
         self.show_mode = False
 
@@ -362,7 +362,8 @@ class StrandsGame(StrandsGameBase):
             Nothing
         '''
         srt_r, srt_c = start
-        stack = [(start, [start], self.game_board.get_letter(Pos(srt_r, srt_c)))]
+        stack = [(start, [start],
+                  self.game_board.get_letter(Pos(srt_r, srt_c)))]
 
         while stack:
             (r, c), journey, board_wrd = stack.pop()
@@ -405,11 +406,13 @@ class StrandsGame(StrandsGameBase):
                 self.run_dfs(start, dictionary, partials, words_sub)
 
         # building new file name from old
-        assert self.game_file.endswith(".txt") and self.game_file.startswith("boards/")
+        assert (self.game_file.endswith(".txt")
+                and self.game_file.startswith("boards/"))
         splice = self.game_file[7: -4]
         outfile = "assets/" + splice + "-with-words.txt"
-    
-        with open(self.game_file, encoding="utf-8") as old, open(outfile, "w", encoding="utf-8") as new:
+
+        with (open(self.game_file, encoding="utf-8") as old,
+              open(outfile, "w", encoding="utf-8") as new):
             for line in old.readlines():
                 new.write(line)
 
@@ -418,6 +421,11 @@ class StrandsGame(StrandsGameBase):
                 new.write(word + "\n")
 
     def get_hint_word(self) -> str:
+        """
+        Helper method for GUI implementation.
+
+        Returns (str): self.hint_word attribute
+        """
         return self.hint_word
 
     def theme(self) -> str:
@@ -507,8 +515,9 @@ class StrandsGame(StrandsGameBase):
                         self.hint_state = None
 
                     if not self.show_mode and self.sound_mode:
-                        correct_sound = pygame.mixer.Sound("assets/confirmation_001.ogg")
-                        correct_sound.play()
+                        cor_sd = pygame.mixer.Sound("assets/" +
+                                                    "confirmation_001.ogg")
+                        cor_sd.play()
                     return (asw_word, True)
 
                 if not self.show_mode and self.sound_mode:
@@ -525,7 +534,7 @@ class StrandsGame(StrandsGameBase):
 
                 # hint meter updates when this is appended
                 self.new_game_guesses.append((board_word, strand))
-                
+
                 if not self.show_mode and self.sound_mode:
                     dict_sound = pygame.mixer.Sound("assets/maximize_006.ogg")
                     dict_sound.play()

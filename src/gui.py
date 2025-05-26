@@ -4,16 +4,16 @@ Pos, StrandFake, BoardFake, StrandsGameFake
 """
 import sys
 from typing import TypeAlias
-
-import pygame
 import os
 import random
+import pygame
 import click
 
 from strands import Pos, Strand, Board, StrandsGame
 from ui import ArtGUIBase, ArtGUIStub
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
-from art_gui import ArtGUI9Slice, ArtGUIHarlequin, ArtGUIHoneycomb, ArtGUIDrawStrands
+from art_gui import (ArtGUI9Slice, ArtGUIHarlequin,
+                     ArtGUIHoneycomb, ArtGUIDrawStrands)
 Loc: TypeAlias = tuple[float, float]
 
 FONT_SIZE = 24
@@ -63,7 +63,8 @@ class GuiStrands:
     # list of active lines, a list of tuples containing start and end positions
     strd_lines: list[tuple[Loc, Loc]]
 
-    def __init__(self, show: bool, brd_filename: str, hint_threshold: int, frame: str, sounds: bool, words: bool) -> None:
+    def __init__(self, show: bool, brd_filename: str, hint_threshold: int,
+                 frame: str, sounds: bool, words: bool) -> None:
         """
         Initializes the GUI application.
         """
@@ -76,7 +77,7 @@ class GuiStrands:
 
         if sounds:
             self.game.sound_mode = True
-        
+
         # handling edge case where cat4 must pair with standard board
         if frame == "cat4":
             self.frame_width = 125
@@ -161,10 +162,10 @@ class GuiStrands:
 
                 if event.type == pygame.QUIT:
                     if sounds:
-                        exit_sound = pygame.mixer.Sound("assets/close_002.ogg")
-                        exit_sound.play()
+                        exit_sd = pygame.mixer.Sound("assets/close_002.ogg")
+                        exit_sd.play()
                         # from official pygame documentation
-                        pygame.time.delay(int(exit_sound.get_length() * 1000))
+                        pygame.time.delay(int(exit_sd.get_length() * 1000))
 
                     # uninitialize all Pygame modules
                     pygame.quit()
@@ -175,9 +176,9 @@ class GuiStrands:
                 elif event.type == pygame.KEYUP:
                     if event.key == pygame.K_q:
                         if sounds:
-                            exit_sound = pygame.mixer.Sound("assets/close_002.ogg")
-                            exit_sound.play()
-                            pygame.time.delay(int(exit_sound.get_length() * 1000))
+                            exit_sd = pygame.mixer.Sound("assets/close_002.ogg")
+                            exit_sd.play()
+                            pygame.time.delay(int(exit_sd.get_length() * 1000))
 
                         pygame.quit()
                         sys.exit()
@@ -190,12 +191,13 @@ class GuiStrands:
 
                         if event.key == pygame.K_ESCAPE:
                             if sounds:
-                                clear_sound = pygame.mixer.Sound("assets/scratch_005.ogg")
-                                clear_sound.play()
+                                clr_sd = pygame.mixer.Sound("assets/" +
+                                                            "scratch_005.ogg")
+                                clr_sd.play()
 
                             self.temp_circles = {}
                             self.temp_circs_ordering = []
-                        
+
                         # (NEW LOGIC)
                         elif event.key == pygame.K_h:
                             self.handle_hint_conditions()
@@ -206,8 +208,9 @@ class GuiStrands:
                     ):
                     if event.type == pygame.MOUSEBUTTONUP:
                         if sounds:
-                            click_sound = pygame.mixer.Sound("assets/click_005.ogg")
-                            click_sound.play()
+                            click_sd = pygame.mixer.Sound("assets/" +
+                                                             "click_005.ogg")
+                            click_sd.play()
                         x_click, y_click = event.pos
                         possible_circs = self.gen_pos_circs(self.col_width / 2)
 
@@ -232,7 +235,6 @@ class GuiStrands:
                 if end == 0:
                     print("The game is over! Exit anytime.")
                     end += 1
-                
 
             # shows application window
             self.draw_window(frame)
@@ -242,8 +244,8 @@ class GuiStrands:
                 end == 0
                 ):
                 if sounds:
-                    click_sound = pygame.mixer.Sound("assets/jingles_STEEL02.ogg")
-                    click_sound.play()
+                    click_sd = pygame.mixer.Sound("assets/jingles_STEEL02.ogg")
+                    click_sd.play()
                 print("The game is over! Exit anytime.")
                 end += 1
 
@@ -451,7 +453,8 @@ class GuiStrands:
 
         assert self.interior_wdth > img_width
         x_loc = self.frame_width + (self.interior_wdth - img_width) / 2
-        y_loc = self.frame_width + counter * self.row_height - (img_height + gap)
+        y_loc = (self.frame_width + counter * self.row_height -
+                 (img_height + gap))
 
         location = (x_loc, y_loc)
         self.surface.blit(text_image, location)
@@ -487,7 +490,9 @@ class GuiStrands:
             print(status)
 
         elif isinstance(status, tuple):
-            asw_ind, cond = status
+            # done for mypy
+            asw_ind = status[0]
+            cond = status[1]
             assert isinstance(asw_ind, int)
 
             _, hint_strd = self.game.answers()[asw_ind]
@@ -673,7 +678,8 @@ class GuiStrands:
 
 # click implementation
 @click.command()
-@click.option("--show", is_flag=True, help="Pass if you desire completed board.")
+@click.option("--show", is_flag=True, help="Pass if you desire " +
+              "completed board.")
 @click.option("-g", "--game", "game", type=str, default=None,
               help="Loads boards/game.txt if passed, otherwise random.")
 @click.option("-h", "--hint", "hint_threshold", type=int, default=3,
@@ -684,7 +690,8 @@ class GuiStrands:
 @click.option("--words", is_flag=True, help=("Pass if you want to just "
                                              "generate trimmed file."))
 
-def main(show: bool, game: str | None, hint_threshold: int, frame: str, sounds: bool, words: bool) -> None:
+def main(show: bool, game: str | None, hint_threshold: int, frame: str,
+         sounds: bool, words: bool) -> None:
     '''
     Main function to fun the GUI including clicker
     functionality.
@@ -703,8 +710,8 @@ def main(show: bool, game: str | None, hint_threshold: int, frame: str, sounds: 
 
     valid_frames = {"cat0", "cat2", "cat3", "cat4"}
     if frame not in valid_frames:
-            print("Frame type is not supported. Input new frame.")
-            sys.exit()
+        print("Frame type is not supported. Input new frame.")
+        sys.exit()
 
     GuiStrands(show, brd_filename, hint_threshold, frame, sounds, words)
 
