@@ -130,8 +130,8 @@ class ArtGUIHarlequin(ArtGUIBase):
         for color in COLORS.values():
             color_list.append(color)
 
-        for h in range(height // KITEHEIGHT):
-            for w in range(width // KITEWIDTH):
+        for h in range((height // KITEHEIGHT) + 2):
+            for w in range((width // KITEWIDTH) + 2):
                 
                 color = color_list[w % 9]
 
