@@ -260,7 +260,7 @@ class GuiStrands:
             Nothing
         """
 
-        if frame == "9slices":
+        if frame == "cat0":
             frame_r: ArtGUIBase = ArtGUI9Slice(self.frame_width)
         elif frame == "cat2":
             frame_r: ArtGUIBase = ArtGUIHarlequin(self.frame_width)
@@ -691,8 +691,6 @@ def main(show: bool, game: str | None, hint_threshold: int, frame: str, sounds: 
 
     Raises FileNotFoundError if no .txt files in boards directory.
     '''
-    if hint_threshold == 0:
-        raise ValueError("Choose a positive int threshold.")
 
     if game is None:
         # condition ensuring os.path.join works later
@@ -703,7 +701,7 @@ def main(show: bool, game: str | None, hint_threshold: int, frame: str, sounds: 
     else:
         brd_filename = os.path.join("boards", f"{game}.txt")
 
-    valid_frames = {"9slices", "cat2", "cat3", "cat4"}
+    valid_frames = {"cat0", "cat2", "cat3", "cat4"}
     if frame not in valid_frames:
             print("Frame type is not supported. Input new frame.")
             sys.exit()

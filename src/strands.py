@@ -575,7 +575,10 @@ class StrandsGame(StrandsGameBase):
             return "Use your current hint"
 
         # since we used a hint, we need to trim the hint meter
-        self.new_game_guesses = self.new_game_guesses[hint_threshold:]
+        if hint_threshold == 0:
+            self.new_game_guesses = []
+        else:
+            self.new_game_guesses = self.new_game_guesses[hint_threshold:]
 
         if hint_level - self.hint_thresh < self.hint_thresh:
             self.shown_hint_msg = False
