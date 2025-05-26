@@ -334,9 +334,9 @@ class Solver:
             Helper function for all_words. Recursively traverses a game board
             in the form of a list until every letter has been visited. 
             """
-            # take all words > 3 len
+            # take all words > 2 len
             if node.is_end:
-                if len(path) > 3:
+                if len(path) > 2:
                     if path not in all_words:
                         all_words[path] = (start, steps[:-1])
 
