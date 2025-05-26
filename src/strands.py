@@ -2,6 +2,8 @@
 Game logic for Milestone 2:
 Pos, StrandFake, BoardFake, StrandsGameFake
 """
+import pygame
+
 from base import PosBase, StrandBase, BoardBase, StrandsGameBase, Step
 
 
@@ -207,6 +209,9 @@ class StrandsGame(StrandsGameBase):
 
     def __init__(self, game_file: str | list[str], hint_threshold: int):
 
+        # for relevant sound enhancements
+        pygame.mixer.init()
+
         # process raw txt file
         if isinstance(game_file, str):
             with open(game_file, encoding="utf-8") as f:
@@ -364,6 +369,8 @@ class StrandsGame(StrandsGameBase):
 
         # check if too short
         if len(board_word) < 3:
+            error_sound = pygame.mixer.Sound("assets/error_008.ogg")
+            error_sound.play()
             return "Too short"
 
         # check if answer/already found answer
@@ -376,9 +383,12 @@ class StrandsGame(StrandsGameBase):
                         # clearing the hint
                         self.hint_state = None
 
-
+                    correct_sound = pygame.mixer.Sound("assets/confirmation_001.ogg")
+                    correct_sound.play()
                     return (asw_word, True)
 
+                error_sound = pygame.mixer.Sound("assets/error_008.ogg")
+                error_sound.play()
                 return "Already found"
 
         # check if dictionary word/already found dictionary word
@@ -390,9 +400,13 @@ class StrandsGame(StrandsGameBase):
                 # hint meter updates when this is appended
                 self.new_game_guesses.append((board_word, strand))
 
+                dict_sound = pygame.mixer.Sound("assets/maximize_006.ogg")
+                dict_sound.play()
                 return (board_word, False)
             # already found
             else:
+                error_sound = pygame.mixer.Sound("assets/error_008.ogg")
+                error_sound.play()
                 return "Already found"
 
         # word is not a valid dictionary word
@@ -400,6 +414,8 @@ class StrandsGame(StrandsGameBase):
             return "Not in word list"
 
     def use_hint(self) -> tuple[int, bool] | str:
+        hint_sound = pygame.mixer.Sound("assets/question_003.ogg")
+        hint_sound.play()
 
         # check if we need to reset hint state to false (NEW LOGIC)
         if self.hint_word:

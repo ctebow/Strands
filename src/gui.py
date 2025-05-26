@@ -68,6 +68,7 @@ class GuiStrands:
         Initializes the GUI application.
         """
         pygame.init()
+        pygame.mixer.init()
 
         self.game: StrandsGameBase = StrandsGame(brd_filename, hint_threshold)
         board = self.game.board()
@@ -137,6 +138,11 @@ class GuiStrands:
             for event in events:
 
                 if event.type == pygame.QUIT:
+                    exit_sound = pygame.mixer.Sound("assets/close_002.ogg")
+                    exit_sound.play()
+                    # from official pygame documentation
+                    pygame.time.delay(int(exit_sound.get_length() * 1000))
+
                     # uninitialize all Pygame modules
                     pygame.quit()
 
@@ -145,6 +151,10 @@ class GuiStrands:
 
                 elif event.type == pygame.KEYUP:
                     if event.key == pygame.K_q:
+                        exit_sound = pygame.mixer.Sound("assets/close_002.ogg")
+                        exit_sound.play()
+                        pygame.time.delay(int(exit_sound.get_length() * 1000))
+
                         pygame.quit()
                         sys.exit()
 
@@ -155,6 +165,9 @@ class GuiStrands:
                         ):
 
                         if event.key == pygame.K_ESCAPE:
+                            clear_sound = pygame.mixer.Sound("assets/scratch_005.ogg")
+                            clear_sound.play()
+
                             self.temp_circles = {}
                             self.temp_circs_ordering = []
 
@@ -169,6 +182,8 @@ class GuiStrands:
                     self.game.game_over()
                     ):
                     if event.type == pygame.MOUSEBUTTONUP:
+                        click_sound = pygame.mixer.Sound("assets/click_005.ogg")
+                        click_sound.play()
                         x_click, y_click = event.pos
                         possible_circs = self.gen_pos_circs(self.col_width / 2)
 
@@ -189,6 +204,11 @@ class GuiStrands:
                     self.game.submit_strand(show_strd)
                     self.append_found_solutions(self.col_width / 2)
 
+                if end == 0:
+                    print("The game is over! Exit anytime.")
+                    end += 1
+                
+
             # shows application window
             self.draw_window(frame)
 
@@ -196,6 +216,8 @@ class GuiStrands:
                 self.game.game_over() and
                 end == 0
                 ):
+                click_sound = pygame.mixer.Sound("assets/jingles_STEEL02.ogg")
+                click_sound.play()
                 print("The game is over! Exit anytime.")
                 end += 1
 
