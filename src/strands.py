@@ -346,7 +346,7 @@ class StrandsGame(StrandsGameBase):
         self.sound_mode = False
 
     def run_dfs(self, start: tuple[int, int], dictionary: set[str],
-                words_sub: set[str]) -> None:
+                partials: set[str], words_sub: set[str]) -> None:
         '''
         Part of the DICTIONARY-WORDS enhancement.
         Performs a DFS on the game_board from boards/G.txt
@@ -367,8 +367,13 @@ class StrandsGame(StrandsGameBase):
 
         while stack:
             (r, c), journey, board_wrd = stack.pop()
+            print(f"stack pop at {(r, c)} for {board_wrd}")
+
+            if board_wrd not in partials and board_wrd not in dictionary:
+                continue
 
             if board_wrd in dictionary and not len(board_wrd) < 3:
+                print(f"adding word {board_wrd}")
                 words_sub.add(board_wrd)
 
             for w in self.game_board.find_neighbors(Pos(r, c)):
@@ -390,13 +395,20 @@ class StrandsGame(StrandsGameBase):
             print("opened original dictionary")
             dictionary = set(line.strip().lower() for line in f.readlines())
             print("made dictionary")
-        
+
+        # hoping to reduce computation time with O(1) lookups
+        partials = set()
+        for wrd in dictionary:
+            for p in range(1, len(wrd)):
+                partial = wrd[:p]
+                partials.add(partial)
+
         words_sub: set[str] = set()
         for r in range(self.game_board.num_rows()):
             for c in range(self.game_board.num_cols()):
                 start = (r, c)
                 print("starting dfs")
-                self.run_dfs(start, dictionary, words_sub)
+                self.run_dfs(start, dictionary, partials, words_sub)
                 print("ran_dfs")
 
         # building new file name from old

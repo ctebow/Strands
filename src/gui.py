@@ -18,7 +18,6 @@ Loc: TypeAlias = tuple[float, float]
 
 FONT_SIZE = 24
 LETTER_SPACER = 5
-FRAME_WIDTH = 20
 LINE_WIDTH = 5
 
 class GuiStrands:
@@ -54,6 +53,7 @@ class GuiStrands:
     game: StrandsGameBase
     show: bool
     font: pygame.font.Font
+    frame_width: int
 
     # dictionary where key is index position of letter,
     # value is a tuple of the pixel position as well as
@@ -73,6 +73,12 @@ class GuiStrands:
         self.game: StrandsGameBase = StrandsGame(brd_filename, hint_threshold)
         if sounds:
             self.game.sound_mode = True
+        
+        # handling edge case where cat4 must pair with standard board
+        if frame == "cat4":
+            self.frame_width = 125
+        else:
+            self.frame_width = 20
 
         board = self.game.board()
 
@@ -87,9 +93,9 @@ class GuiStrands:
 
         # dynamic window dimension generation
         window_width = (max(grid_dim * board.num_cols(), bottom_width)
-                        + 2 * FRAME_WIDTH
+                        + 2 * self.frame_width
                         )
-        window_height = grid_dim * (board.num_rows() + 1) + 2 * FRAME_WIDTH
+        window_height = grid_dim * (board.num_rows() + 1) + 2 * self.frame_width
 
         if show:
             self.show = True
@@ -102,8 +108,8 @@ class GuiStrands:
         self.surface = pygame.display.set_mode((window_width, window_height))
 
         # important interior attributes
-        self.interior_hght = window_height - 2 * FRAME_WIDTH
-        self.interior_wdth = window_width - 2 * FRAME_WIDTH
+        self.interior_hght = window_height - 2 * self.frame_width
+        self.interior_wdth = window_width - 2 * self.frame_width
         self.row_height = self.interior_hght / (board.num_rows() + 1)
         self.col_width = self.interior_wdth / (board.num_cols())
         self.lett_locs = []
@@ -254,13 +260,13 @@ class GuiStrands:
         """
 
         if frame == "9slices":
-            frame_r: ArtGUIBase = ArtGUI9Slice(FRAME_WIDTH)
+            frame_r: ArtGUIBase = ArtGUI9Slice(self.frame_width)
         elif frame == "cat2":
-            frame_r: ArtGUIBase = ArtGUIHarlequin(FRAME_WIDTH)
+            frame_r: ArtGUIBase = ArtGUIHarlequin(self.frame_width)
         elif frame == "cat3":
-            frame_r: ArtGUIBase = ArtGUIHoneycomb(FRAME_WIDTH)
+            frame_r: ArtGUIBase = ArtGUIHoneycomb(self.frame_width)
         elif frame == "cat4":
-            frame_r: ArtGUIBase = ArtGUIDrawStrands(FRAME_WIDTH)
+            frame_r: ArtGUIBase = ArtGUIDrawStrands(self.frame_width)
         else:
             raise ValueError("Frame type is not supported. Input new frame.")
 
@@ -270,7 +276,7 @@ class GuiStrands:
         interior.fill((253, 253, 150))
 
         # draws the yellow interior onto grey background
-        self.surface.blit(interior, (FRAME_WIDTH, FRAME_WIDTH))
+        self.surface.blit(interior, (self.frame_width, self.frame_width))
 
         # actually drawing the lines
         for loc_1, loc_2 in self.strd_lines:
@@ -360,13 +366,13 @@ class GuiStrands:
 
                 assert self.col_width > img_width
                 x_gap = (self.col_width - img_width) / 2
-                x_loc = FRAME_WIDTH + (
+                x_loc = self.frame_width + (
                     x_counter * self.col_width - (img_width + x_gap)
                 )
 
                 assert self.row_height > img_height
                 y_gap = (self.row_height - img_height) / 2
-                y_loc = FRAME_WIDTH + (
+                y_loc = self.frame_width + (
                     y_counter * self.row_height - (img_height + y_gap)
                 )
 
@@ -443,8 +449,8 @@ class GuiStrands:
         gap = (self.row_height - img_height) / 2
 
         assert self.interior_wdth > img_width
-        x_loc = FRAME_WIDTH + (self.interior_wdth - img_width) / 2
-        y_loc = FRAME_WIDTH + counter * self.row_height - (img_height + gap)
+        x_loc = self.frame_width + (self.interior_wdth - img_width) / 2
+        y_loc = self.frame_width + counter * self.row_height - (img_height + gap)
 
         location = (x_loc, y_loc)
         self.surface.blit(text_image, location)
