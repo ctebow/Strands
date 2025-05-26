@@ -17,3 +17,10 @@ for starting the game, quitting/exiting, clicking, clearing by
 hitting escape, submitting a too short, non-dictionary, or repeated word,
 and for both submitting a new dictionary and new
 strand word. Enjoy!
+
+2) DICTIONARY-WORDS: For testing this functionality, use the optional
+command-line parameter --words in addition to all the other normal
+PLay or Show mode command-line arguments. Doing so will create
+a new GAME.with-words.txt file in the assets/ directory from the original
+file specified by -g game in the command-line. This newly created file, if
+made, is NOT used by the Game Logic, as this addition was optional. Enjoy!

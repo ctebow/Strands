@@ -63,7 +63,7 @@ class GuiStrands:
     # list of active lines, a list of tuples containing start and end positions
     strd_lines: list[tuple[Loc, Loc]]
 
-    def __init__(self, show: bool, brd_filename: str, hint_threshold: int, frame: str, sounds: bool) -> None:
+    def __init__(self, show: bool, brd_filename: str, hint_threshold: int, frame: str, sounds: bool, words: bool) -> None:
         """
         Initializes the GUI application.
         """
@@ -71,6 +71,9 @@ class GuiStrands:
         pygame.mixer.init()
 
         self.game: StrandsGameBase = StrandsGame(brd_filename, hint_threshold)
+        if words:
+            self.game.dict_enhancement()
+
         if sounds:
             self.game.sound_mode = True
         
@@ -680,9 +683,10 @@ class GuiStrands:
 @click.option("-a", "--art", "frame", type=str, default="cat3",
               help="Loads desired art frame.")
 @click.option("--sounds", is_flag=True, help="Pass if you desire sounds.")
+@click.option("--words", is_flag=True, help=("Pass if you want to just "
+                                             "generate trimmed file."))
 
-
-def main(show: bool, game: str | None, hint_threshold: int, frame: str, sounds: bool):
+def main(show: bool, game: str | None, hint_threshold: int, frame: str, sounds: bool, words: bool):
     '''
     Main function to fun the GUI including clicker
     functionality.
@@ -706,7 +710,7 @@ def main(show: bool, game: str | None, hint_threshold: int, frame: str, sounds: 
             print("Frame type is not supported. Input new frame.")
             sys.exit()
 
-    GuiStrands(show, brd_filename, hint_threshold, frame, sounds)
+    GuiStrands(show, brd_filename, hint_threshold, frame, sounds, words)
 
 if __name__ == "__main__":
     main()
