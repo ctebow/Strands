@@ -188,6 +188,46 @@ class Board(BoardBase):
             msg += self.get_letter(pos)
 
         return msg
+    
+    def find_neighbors(self, pos: PosBase) -> list[tuple[int, int]]:
+        """
+        Helper function for the DICTIONARY-WORDS
+        game enhancement. Given a valid board PosBase,
+        computes and returns neighboring position objects
+        in a list. These are purposely not in PosBase form
+        because this class does not support being in a set.
+
+        Inputs:
+            pos (PosBase): the board position to start
+
+        Returns (list[tuple[int, int]): the positions of all neighbors
+        """
+        pos_r_nbs = [(pos.r + 1, pos.c), (pos.r - 1, pos.c)]
+        pos_c_nbs = [(pos.r, pos.c + 1), (pos.r, pos.c - 1)]
+        pos_diag_nbs = [(pos.r + 1, pos.c + 1), (pos.r + 1, pos.c - 1),
+                        (pos.r - 1, pos.c + 1), (pos.r - 1, pos.c - 1)]
+
+        row_count = self.num_rows()
+        col_count = self.num_cols()
+
+        if pos.r == row_count - 1:
+            del pos_r_nbs[0]
+        elif pos.r == 0:
+            del pos_r_nbs[1]
+
+        if pos.c == col_count - 1:
+            del pos_c_nbs[0]
+        elif pos.c == 0:
+            del pos_c_nbs[1]
+
+        diags = []
+        for r, c in pos_diag_nbs:
+            if 0 <= r <= row_count - 1 and 0 <= c <= col_count - 1:
+                diags.append((r, c))
+
+        neighbors = set(pos_r_nbs + pos_c_nbs + diags)
+
+        return neighbors
 
 class StrandsGame(StrandsGameBase):
     """
@@ -199,7 +239,7 @@ class StrandsGame(StrandsGameBase):
     shown_hint_msg: bool
     game_board: Board
     game_answers: list[tuple[str, Strand]]
-
+    game_file: str
     tot_game_guesses: list[tuple[str, Strand]]
     hint_state: None | bool
     hint_word: str
@@ -213,6 +253,7 @@ class StrandsGame(StrandsGameBase):
         pygame.mixer.init()
 
         # process raw txt file
+        self.game_file = game_file
         if isinstance(game_file, str):
             with open(game_file, encoding="utf-8") as f:
                 lines_lst: list[str] = [line.strip() for line in f.readlines()]
@@ -295,6 +336,66 @@ class StrandsGame(StrandsGameBase):
         self.hint_state = None
         self.hint_word = self.game_answers[0][0]
         self.new_game_guesses = []
+
+    def run_dfs(self, start: tuple[int, int], dictionary: set[str],
+                words_sub: set[str]) -> None:
+        '''
+        Part of the DICTIONARY-WORDS enhancement.
+        Performs a DFS on the game_board from boards/G.txt
+        to ultimately generate a new file G-with-words.txt with
+        an additional section listing all words
+        on the board from web2.txt.
+        '''
+
+        srt_r, srt_c = start
+        stack = [(start, [start], self.game_board.get_letter(Pos(srt_r, srt_c)))]
+
+        while stack:
+            (r, c), journey, board_wrd = stack.pop()
+
+            if board_wrd in dictionary and not len(board_wrd) < 3:
+                words_sub.add(board_wrd)
+
+            for w in self.game_board.find_neighbors(Pos(r, c)):
+                print("found neighbors")
+                nb_r, nb_c = w
+
+                # prevents dfs revisiting
+                if w not in journey:
+                    lett = self.game_board.get_letter(Pos(nb_r, nb_c))
+                    stack.append((w, journey + [w], board_wrd + lett))
+
+    def dict_enhancement(self) -> None:
+        """
+        Iterates through all letters in the game_board,
+        running DFS starting at each one to construct a set
+        of all dictionary words in the game.
+        """
+        with open("assets/web2.txt", encoding="utf-8") as f:
+            print("opened original dictionary")
+            dictionary = set(line.strip().lower() for line in f.readlines())
+            print("made dictionary")
+        
+        words_sub: set[str] = set()
+        for r in range(self.game_board.num_rows()):
+            for c in range(self.game_board.num_cols()):
+                start = (r, c)
+                print("starting dfs")
+                self.run_dfs(start, dictionary, words_sub)
+                print("ran_dfs")
+
+        # building new file name from old
+        assert self.game_file.endswith(".txt") and self.game_file.startswith("boards/")
+        splice = self.game_file[7: -4]
+        outfile = "assets/" + splice + "-with-words.txt"
+    
+        with open(self.game_file, encoding="utf-8") as old, open(outfile, "w", encoding="utf-8") as new:
+            for line in old.readlines():
+                new.write(line)
+
+            new.write("\n Relevant Dictionary Words:\n")
+            for word in sorted(words_sub):
+                new.write(word + "\n")
 
     def get_hint_word(self) -> str:
         return self.hint_word
