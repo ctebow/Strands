@@ -1,13 +1,12 @@
 """
-Art logic for GUI
+Logic for ArtGUI. Supports cat0, cat2, cat3, and cat4 frames. 
 """
-import sys
+import click
 import pygame
 import pygame.gfxdraw
 import math
+import random
 from ui import ArtGUIBase, GUIStub
-import click
-
 
 @click.command()
 @click.option("-a", "--art", required=True, help="Name of art frame to use")
@@ -15,8 +14,12 @@ import click
 @click.option("-w", "--width", type=int,  default=500)
 @click.option("-h", "--height", type=int,  default=500)
 def cmd(art, frame, width, height):
+    """
+    Allows for further command line argument support. Set up to take art frame, 
+    frame width, width, and height arguments. 
+    """
     if art:
-        if art == "9slices":
+        if art == "cat0":
             GUIStub(ArtGUI9Slice(int(frame)),
             width, height).run_event_loop()
         elif art == "cat1":
@@ -35,19 +38,20 @@ def cmd(art, frame, width, height):
     else:
         print("frame missing, input frame with <-f> or <--frame>. ")
 
-
+# for Hexagons
 ROOT_THREE = 1.732
 
+# RGB tuples constant. 
 COLORS = {
             "Aqua": (0, 255, 255),
-            "Blue": (0, 0, 255),
-            "Green": (0, 128, 0),
-            "Lime": (0, 255, 0),
-            "Maroon": (128, 0, 0),
-            "Navy_Blue": (0, 0, 128),
+            "Blue": (64, 0, 255),
+            "Green": (0, 255, 64),
+            "Lime": (0, 255, 64),
+            "Maroon": (128, 0, 64),
+            "Navy_Blue": (64, 0, 128),
             "Olive": (128, 128, 0),
             "Purple": (128, 0, 128),
-            "Red": (255, 0, 0),
+            "Red": (255, 0, 0)
 }
 
 class ArtGUI9Slice(ArtGUIBase):
@@ -63,7 +67,11 @@ class ArtGUI9Slice(ArtGUIBase):
         self.frame_width = frame_width
 
     def draw_background(self, surface: pygame.Surface) -> None:
-
+        """
+        Draws 9Slice background.
+        Args: 
+            surface: pygame.Surface, created in GUI class. 
+        """
         width = surface.get_width()
         height = surface.get_height()
 
@@ -78,13 +86,12 @@ class ArtGUI9Slice(ArtGUIBase):
                                   (self.frame_width, self.frame_width))
         left = pygame.Rect(0, self.frame_width, self.frame_width,
                             height - 2 * self.frame_width)
-        right = pygame.Rect(width - self.frame_width, height - self.frame_width,
+        right = pygame.Rect(width - self.frame_width, self.frame_width,
                             self.frame_width, height - 2 * self.frame_width)
         up = pygame.Rect(self.frame_width, 0, width - 2 * self.frame_width,
                          self.frame_width)
         down = pygame.Rect(self.frame_width, height - self.frame_width,
                            width - 2 * self.frame_width, self.frame_width)
-        
         rects = [up_left, up_right, down_left, 
                  down_right, left, right, up, down]
         
@@ -93,11 +100,8 @@ class ArtGUI9Slice(ArtGUIBase):
 
 class ArtGUIHarlequin(ArtGUIBase):
     """
-    GUI art class that draws a grid of regular kites. Kite width size and 
+    GUI art class that draws a grid of regular kites. Kite width, size, and 
     spacing are easily changed through class attributes. 
-    Future implementations will include methods of better center the kites
-    on a screen of varying sizes, currently kites simply cover the entire 
-    screen somewhat evenly.
     """
 
     KITEWIDTH = 10
@@ -109,6 +113,11 @@ class ArtGUIHarlequin(ArtGUIBase):
         self.frame_width = frame_width
     
     def draw_background(self, surface: pygame.Surface) -> None:
+        """
+        Draws kite/harlequin background. 
+        Args:
+            surface: pygame.Surface, created in GUI class. 
+        """
 
         # basic info
         width = surface.get_width()
@@ -136,9 +145,6 @@ class ArtGUIHoneycomb(ArtGUIBase):
     """
     GUI art class that draws a grid of regular hexagons with the flat side up. 
     Hexagon size and spacing are easily changed through class attributes. 
-    Future implementations will include methods of better center the hexagons
-    on a screen of varying sizes, currently hexagons simply cover the entire 
-    screen somewhat evenly. 
     """
 
     frame_width: int
@@ -149,7 +155,11 @@ class ArtGUIHoneycomb(ArtGUIBase):
         self.frame_width = frame_width
 
     def draw_background(self, surface: pygame.Surface) -> None:
-
+        """
+        Draws background of hexagons.
+        Args:
+            surface: pygame.Surface, created in GUI. 
+        """
         # basic info
         RADIUS = self.HEX_RADIUS
         SPACING = self.HEX_SPACING
@@ -247,11 +257,17 @@ class ArtGUIDrawStrands(ArtGUIBase):
         self.circles_dict = {}
 
     def draw_background(self, surface: pygame.Surface) -> None:
-        
+        """
+        Draws background using draw_background_circles, draw_strand_circles, 
+        and draw_lines. 
+        Args:
+            surface: pygame.Surface, created in GUI. 
+        """
         # change background circle color to make background circles visible. 
         self.draw_background_circles(surface)
         self.draw_strand_circles(surface)
         self.draw_lines(surface, self.STRANDS_COORDS)
+
 
     def draw_background_circles(self, surface: pygame.Surface) -> None:
         """

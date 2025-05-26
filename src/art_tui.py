@@ -1,11 +1,9 @@
 """
-Art logic for TUI
+Logic for ArtTUI. Contains cat0 and cat1 art classes. 
 """
-import sys
+import click
 from colorama import Back, Style
 from ui import ArtTUIBase, TUIStub
-
-import click
 
 @click.command()
 @click.option("-a", "--art", required=True, help="Name of art frame to use")
@@ -13,8 +11,12 @@ import click
 @click.option("-w", "--width", type=int,  default=6)
 @click.option("-h", "--height", type=int,  default=8)
 def cmd(art, frame, width, height):
+    """
+    Allows for further command line argument support. Set up to take art frame, 
+    frame width, width, and height arguments. 
+    """
     if art:
-        if art == "wrappers":
+        if art == "cat0":
             TUIStub(ArtTUIWrappers(frame, width), width, height)
         elif art == "cat1":
             TUIStub(ArtTUIChecks(frame, width), width, height)
@@ -54,6 +56,10 @@ class ArtTUIWrappers(ArtTUIBase):
 
 
     def print_top_edge(self) -> None:
+        """
+        Prints the top edge of the TUI art frame. Intended to be used within
+        TUI implementation. 
+        """
 
         width = self._frame_width
         chunks = []
@@ -73,7 +79,10 @@ class ArtTUIWrappers(ArtTUIBase):
             print(Style.RESET_ALL)
 
     def print_bottom_edge(self) -> None:
-
+        """
+        Prints the bottom edge of the TUI art frame. Intended to be used inside
+        the TUI game. 
+        """
         width = self._frame_width
         chunks = []
         for idx in reversed(range(width)):
@@ -93,6 +102,11 @@ class ArtTUIWrappers(ArtTUIBase):
             print(Style.RESET_ALL)
 
     def print_right_bar(self) -> None:
+        """
+        Prints right bar of the TUI art frame. Intended to be used inside TUI
+        game. 
+        """
+
         chunks = []
         for idx in range(self._frame_width):
             chunks.append(idx % 3)
@@ -102,6 +116,10 @@ class ArtTUIWrappers(ArtTUIBase):
         print()
 
     def print_left_bar(self) -> None:
+        """
+        Prints left bar of the TUI art frame. Intended to be used inside TUI
+        game. 
+        """
         chunks = []
         for idx in range(self._frame_width):
             chunks.append(idx % 3)
@@ -112,7 +130,6 @@ class ArtTUIWrappers(ArtTUIBase):
 
 
 class ArtTUIChecks(ArtTUIBase):
-
     """
     Class that wraps the user text interface in a checkerbox pattern.
     Contains methods to be used by the TUI to:
@@ -120,11 +137,9 @@ class ArtTUIChecks(ArtTUIBase):
     - Print the right edge
     - Print the left edge
     - Print the bottom edge
-    The color of each box can be quickly changed. Future planned implementation
-    of this class involves interaction with the TUI to display a dynamic
-    background once a strand is found. This class uses an odd/even index i to
-    keep track of the starting color of each row without needing to know the 
-    height of the screen. 
+    The color of each box can be quickly changed. This class uses an odd/even
+    index i to keep track of the starting color of each row without needing to 
+    know the height of the screen. 
     """
 
     _frame_width: int
@@ -150,7 +165,9 @@ class ArtTUIChecks(ArtTUIBase):
             self._bottom_start = (self._frame_width) % 2
 
     def print_top_edge(self) -> None:
-
+        """
+        Prints top edge, updates start index. 
+        """
         width = self._frame_width
         i = 0
         for col in range(width):
@@ -165,7 +182,9 @@ class ArtTUIChecks(ArtTUIBase):
                 i = 0
 
     def print_bottom_edge(self) -> None:
-
+        """
+        Prints bottom edge.
+        """
         width = self._frame_width
         i = self._bottom_start % 2
         for col in range(width):
@@ -180,7 +199,9 @@ class ArtTUIChecks(ArtTUIBase):
                 i = 0
 
     def print_left_bar(self) -> None:
-
+        """
+        Prints left bar, updates start index. 
+        """
         width = self._frame_width
         i = self._left_start
         for idx in range(width):
@@ -194,7 +215,9 @@ class ArtTUIChecks(ArtTUIBase):
             self._left_start = 0
     
     def print_right_bar(self) -> None:
-
+        """
+        Prints right bar, updates start index. 
+        """
         width = self._frame_width
         i = self._right_start
         for idx in range(width):
@@ -209,5 +232,6 @@ class ArtTUIChecks(ArtTUIBase):
             self._right_start = 0
 
         self._bottom_start += 1
+        
 if __name__ == "__main__":
     cmd()
