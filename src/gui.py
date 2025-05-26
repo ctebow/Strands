@@ -63,7 +63,7 @@ class GuiStrands:
     # list of active lines, a list of tuples containing start and end positions
     strd_lines: list[tuple[Loc, Loc]]
 
-    def __init__(self, show: bool, brd_filename: str, hint_threshold: int) -> None:
+    def __init__(self, show: bool, brd_filename: str, hint_threshold: int, frame: str) -> None:
         """
         Initializes the GUI application.
         """
@@ -119,9 +119,9 @@ class GuiStrands:
         self.strd_lines = []
 
         # run event loop
-        self.run_event_loop()
+        self.run_event_loop(frame)
 
-    def run_event_loop(self) -> None:
+    def run_event_loop(self, frame: str) -> None:
         """
         The event loop for our application. Inside this loop, we will
         repeatedly perform the following operations:
@@ -190,7 +190,7 @@ class GuiStrands:
                     self.append_found_solutions(self.col_width / 2)
 
             # shows application window
-            self.draw_window()
+            self.draw_window(frame)
 
             if (not self.show and
                 self.game.game_over() and
@@ -200,14 +200,26 @@ class GuiStrands:
                 end += 1
 
 
-    def draw_window(self) -> None:
+    def draw_window(self, frame: str) -> None:
         """
         Draws the interior and exterior frame and also
         the game board.
         """
         # fills entire background with grey
-        frame: ArtGUIBase = ArtGUIHoneycomb(FRAME_WIDTH)
-        frame.draw_background(self.surface)
+        valid_frames = {"9slices", "cat2", "cat3", "cat4"}
+
+        if frame == "9slices":
+            frame_r: ArtGUIBase = ArtGUI9Slice(FRAME_WIDTH)
+        elif frame == "cat2":
+            frame_r: ArtGUIBase = ArtGUIHarlequin(FRAME_WIDTH)
+        elif frame == "cat3":
+            frame_r: ArtGUIBase = ArtGUIHoneycomb(FRAME_WIDTH)
+        elif frame == "cat4":
+            frame_r: ArtGUIBase = ArtGUIDrawStrands(FRAME_WIDTH)
+        else:
+            raise ValueError("Frame type is not supported. Input new frame.")
+
+        frame_r.draw_background(self.surface)
 
         interior = pygame.Surface((self.interior_wdth, self.interior_hght))
         interior.fill((253, 253, 150))
@@ -411,7 +423,8 @@ class GuiStrands:
         Responsible for changing attributes to
         suit appropriate hint state upon asking for a hint.
 
-        Returns (str): the hint word, or none if active hint present
+        Returns:
+            Nothing
         """""
 
         status = self.game.use_hint()
@@ -606,19 +619,17 @@ class GuiStrands:
                 rad: float = width / 2
                 self.circles[center] = rad
 
-# Click Implementation
+# click implementation
 @click.command()
 @click.option("--show", is_flag=True, help="Pass if you desire completed board.")
 @click.option("-g", "--game", "game", type=str, default=None,
               help="Loads boards/GAME.txt if passed, otherwise random.")
 @click.option("-h", "--hint", "hint_threshold", type=int, default=3,
               help="Loads desired hint threshold.")
+@click.option("-a", "--art", "frame", type=str, default="cat3",
+              help="Loads desired art frame.")
 
-# @click.option("-f", "--frame", type=int, default=0)
-# @click.option("-w", "--width", type=int,  default=500)
-# @click.option("-h", "--height", type=int,  default=500)
-
-def main(show: bool, game: str | None, hint_threshold: int):
+def main(show: bool, game: str | None, hint_threshold: int, frame: str):
     '''
     Main function to fun the GUI including clicker
     functionality.
@@ -637,7 +648,12 @@ def main(show: bool, game: str | None, hint_threshold: int):
     else:
         brd_filename = os.path.join("boards", f"{game}.txt")
 
-    GuiStrands(show, brd_filename, hint_threshold)
+    valid_frames = {"9slices", "cat2", "cat3", "cat4"}
+    if frame not in valid_frames:
+            print("Frame type is not supported. Input new frame.")
+            sys.exit()
+
+    GuiStrands(show, brd_filename, hint_threshold, frame)
 
 if __name__ == "__main__":
     main()
