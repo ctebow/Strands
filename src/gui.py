@@ -163,8 +163,8 @@ class GuiStrands:
                     if sounds:
                         exit_sound = pygame.mixer.Sound("assets/close_002.ogg")
                         exit_sound.play()
-                    # from official pygame documentation
-                    pygame.time.delay(int(exit_sound.get_length() * 1000))
+                        # from official pygame documentation
+                        pygame.time.delay(int(exit_sound.get_length() * 1000))
 
                     # uninitialize all Pygame modules
                     pygame.quit()
@@ -177,7 +177,7 @@ class GuiStrands:
                         if sounds:
                             exit_sound = pygame.mixer.Sound("assets/close_002.ogg")
                             exit_sound.play()
-                        pygame.time.delay(int(exit_sound.get_length() * 1000))
+                            pygame.time.delay(int(exit_sound.get_length() * 1000))
 
                         pygame.quit()
                         sys.exit()
@@ -195,11 +195,9 @@ class GuiStrands:
 
                             self.temp_circles = {}
                             self.temp_circs_ordering = []
-
-                        elif (event.key == pygame.K_h and
-                            self.game.hint_meter() >= self.game.hint_threshold()
-                            ):
-
+                        
+                        # (NEW LOGIC)
+                        elif event.key == pygame.K_h:
                             self.handle_hint_conditions()
 
                 if (not self.show and
@@ -677,7 +675,7 @@ class GuiStrands:
 @click.command()
 @click.option("--show", is_flag=True, help="Pass if you desire completed board.")
 @click.option("-g", "--game", "game", type=str, default=None,
-              help="Loads boards/GAME.txt if passed, otherwise random.")
+              help="Loads boards/game.txt if passed, otherwise random.")
 @click.option("-h", "--hint", "hint_threshold", type=int, default=3,
               help="Loads desired hint threshold.")
 @click.option("-a", "--art", "frame", type=str, default="cat3",

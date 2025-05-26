@@ -561,7 +561,7 @@ class StrandsGame(StrandsGameBase):
         hint_level = self.hint_meter()
         hint_threshold = self.hint_threshold()
 
-        # check if we can get hint
+        # check if we can get hint (NEW LOGIC)
         if hint_level < hint_threshold:
             return "No hint yet"
 
