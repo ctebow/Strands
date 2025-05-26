@@ -1,5 +1,5 @@
 """
-GUI Implementation for Milestone 2:
+GUI Implementation for Milestone 3:
 Pos, StrandFake, BoardFake, StrandsGameFake
 """
 import sys
@@ -29,12 +29,12 @@ class GuiStrands:
     number of theme words found, which theme words found,
     and the hint meter current value.
 
-    Moves from Stub to Fake implementation. Supports
+    Moves from Fake to Strands implementation. Supports
     Click-based command-line arguments
     for Play and Show mode, as well as for
-    the desired hint threshold and frame type.
+    the desired hint threshold and frame type (among others).
 
-    Now includes interactions to select and submit
+    Includes interactions to select and submit
     strands via a mouse input, as well as input
     functionality for using ("h") and displaying hints.
 
