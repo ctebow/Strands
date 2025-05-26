@@ -239,7 +239,7 @@ class GuiStrands:
         elif frame == "cat3":
             frame_r: ArtGUIBase = ArtGUIHoneycomb(FRAME_WIDTH)
         elif frame == "cat4":
-            frame_r: ArtGUIBase = ArtGUIDrawStrands(FRAME_WIDTH)
+            frame_r: ArtGUIBase = ArtGUIDrawStrands(125)
         else:
             raise ValueError("Frame type is not supported. Input new frame.")
 
