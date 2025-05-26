@@ -50,7 +50,7 @@ class GuiStrands:
     hint_circles: dict[Loc, float]
     active_hint: bool
     temp_circs_ordering: list[tuple[int, int]]
-    game: StrandsGameBase
+    game: StrandsGame
     show: bool
     font: pygame.font.Font
     frame_width: int
@@ -70,7 +70,7 @@ class GuiStrands:
         pygame.init()
         pygame.mixer.init()
 
-        self.game: StrandsGameBase = StrandsGame(brd_filename, hint_threshold)
+        self.game: StrandsGame = StrandsGame(brd_filename, hint_threshold)
         if words:
             self.game.dict_enhancement()
 
@@ -263,11 +263,11 @@ class GuiStrands:
         if frame == "cat0":
             frame_r: ArtGUIBase = ArtGUI9Slice(self.frame_width)
         elif frame == "cat2":
-            frame_r: ArtGUIBase = ArtGUIHarlequin(self.frame_width)
+            frame_r = ArtGUIHarlequin(self.frame_width)
         elif frame == "cat3":
-            frame_r: ArtGUIBase = ArtGUIHoneycomb(self.frame_width)
+            frame_r = ArtGUIHoneycomb(self.frame_width)
         elif frame == "cat4":
-            frame_r: ArtGUIBase = ArtGUIDrawStrands(self.frame_width)
+            frame_r = ArtGUIDrawStrands(self.frame_width)
         else:
             raise ValueError("Frame type is not supported. Input new frame.")
 
@@ -684,7 +684,7 @@ class GuiStrands:
 @click.option("--words", is_flag=True, help=("Pass if you want to just "
                                              "generate trimmed file."))
 
-def main(show: bool, game: str | None, hint_threshold: int, frame: str, sounds: bool, words: bool):
+def main(show: bool, game: str | None, hint_threshold: int, frame: str, sounds: bool, words: bool) -> None:
     '''
     Main function to fun the GUI including clicker
     functionality.

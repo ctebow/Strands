@@ -110,7 +110,8 @@ class Strand(StrandBase):
         return False
 
     def is_folded(self) -> bool:
-        connections: set[tuple[PosBase, PosBase]] = set()
+        connections: set[tuple[tuple[int, int],
+                               tuple[int, int]]] = set()
         pos_lst = self.positions()
 
         for ind, pos in enumerate(pos_lst[:-1]):
@@ -189,7 +190,7 @@ class Board(BoardBase):
 
         return msg
     
-    def find_neighbors(self, pos: PosBase) -> list[tuple[int, int]]:
+    def find_neighbors(self, pos: PosBase) -> set[tuple[int, int]]:
         """
         Helper function for the DICTIONARY-WORDS
         game enhancement. Given a valid board PosBase,
@@ -200,7 +201,7 @@ class Board(BoardBase):
         Inputs:
             pos (PosBase): the board position to start
 
-        Returns (list[tuple[int, int]): the positions of all neighbors
+        Returns (set[tuple[int, int]]): the positions of all neighbors
         """
         pos_r_nbs = [(pos.r + 1, pos.c), (pos.r - 1, pos.c)]
         pos_c_nbs = [(pos.r, pos.c + 1), (pos.r, pos.c - 1)]
@@ -238,15 +239,15 @@ class StrandsGame(StrandsGameBase):
     hint_thresh: int
     shown_hint_msg: bool
     game_board: Board
-    game_answers: list[tuple[str, Strand]]
+    game_answers: list[tuple[str, StrandBase]]
     game_file: str
     show_mode: bool
     sound_mode: bool
-    tot_game_guesses: list[tuple[str, Strand]]
+    tot_game_guesses: list[tuple[str, StrandBase]]
     hint_state: None | bool
     hint_word: str
     # guesses made after hint cleared
-    new_game_guesses: list[tuple[str, Strand]]
+    new_game_guesses: list[tuple[str, StrandBase]]
     word_dictionary: list[str]
 
     def __init__(self, game_file: str | list[str], hint_threshold: int = 3):
@@ -255,8 +256,8 @@ class StrandsGame(StrandsGameBase):
         pygame.mixer.init()
 
         # process raw txt file
-        self.game_file = game_file
         if isinstance(game_file, str):
+            self.game_file = game_file
             with open(game_file, encoding="utf-8") as f:
                 lines_lst: list[str] = [line.strip() for line in f.readlines()]
         else:
@@ -283,7 +284,7 @@ class StrandsGame(StrandsGameBase):
 
         self.game_board = Board(board_lst) # updated to be board object
 
-        game_answers: list[tuple[str, Strand]] = []
+        game_answers: list[tuple[str, StrandBase]] = []
         for ind, r in enumerate(lines_lst[board_stp:]):
             if r == "":
                 break
@@ -430,7 +431,7 @@ class StrandsGame(StrandsGameBase):
 
     def found_strands(self) -> list[StrandBase]:
 
-        found_strands: list[Strand] = []
+        found_strands: list[StrandBase] = []
         for gus_word, _ in self.tot_game_guesses:
             for ans_word, ans_strd in self.game_answers:
                 if gus_word == ans_word:
@@ -576,7 +577,8 @@ class StrandsGame(StrandsGameBase):
 
         # since we used a hint, we need to trim the hint meter
         if hint_threshold == 0:
-            self.new_game_guesses = []
+            # chosen functionality for 0 case
+            self.new_game_guesses = self.new_game_guesses[1:]
         else:
             self.new_game_guesses = self.new_game_guesses[hint_threshold:]
 

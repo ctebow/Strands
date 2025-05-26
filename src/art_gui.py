@@ -13,7 +13,7 @@ from ui import ArtGUIBase, GUIStub
 @click.option("-f", "--frame", type=int, default=0)
 @click.option("-w", "--width", type=int,  default=500)
 @click.option("-h", "--height", type=int,  default=500)
-def cmd(art, frame, width, height):
+def cmd(art: str, frame: int, width: int, height: int) -> None:
     """
     Allows for further command line argument support. Set up to take art frame, 
     frame width, width, and height arguments. 
