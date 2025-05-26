@@ -144,7 +144,8 @@ class Trie:
 class Mask:
     """
     FOR GENERAL SOLVER.Integer mask intended to represent a typical strands 
-    gameboard. More efficient than using a list to keep track of positions.
+    gameboard. More efficient than using a list of bools to keep track 
+    of positions.
     """   
 
     def __init__(self, rows, cols):
@@ -357,7 +358,7 @@ class Solver:
             for perm in PERMS.keys():
                 nr, nc = perm
                 if 0 <= (r + nr) < self.rows and 0 <= (c + nc) < self.cols:
-                    new_steps = steps + (PERMS[(nr, nc)],) # tuple for immutability
+                    new_steps = steps + (PERMS[(nr, nc)],) # immutable tuple
                     all_words_dfs(r + nr, c + nc, node.children[letter], 
                                   path + letter, start, new_steps)
 
@@ -382,7 +383,7 @@ class Solver:
         # sort words that only are the top 50k in english dictionary. 
         top_50k = {}
         for word in raw_words.keys():
-            if word in self.frequency_chart and self.frequency_chart[word] > 200:
+            if word in self.frequency_chart and self.frequency_chart[word] >200:
                 top_50k[word] = raw_words[word]
         # pop words that are too long
         for word in top_50k:
@@ -481,7 +482,8 @@ class Solver:
         boards = set()
 
 
-        def placer_dfs(strand: Strand, placed: tuple[Strand], mask: Mask, threshold):
+        def placer_dfs(strand: Strand,
+                        placed: tuple[Strand], mask: Mask, threshold):
             """
             Depth first algorithm to place top 50 strands on a board. 
             """
