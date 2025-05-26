@@ -390,13 +390,9 @@ class StrandsGameBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def submit_strand(self, strand: StrandBase, show=False) -> tuple[str, bool] | str:
+    def submit_strand(self, strand: StrandBase) -> tuple[str, bool] | str:
         """
         Play a selected strand.
-
-        Inputs:
-            show (bool): True if in Show mode, False (default)
-            otherwise.
 
         Returns (word, True):
             if the strand corresponds to a theme word which

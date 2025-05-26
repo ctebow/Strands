@@ -240,6 +240,7 @@ class StrandsGame(StrandsGameBase):
     game_board: Board
     game_answers: list[tuple[str, Strand]]
     game_file: str
+    show_mode: bool
     tot_game_guesses: list[tuple[str, Strand]]
     hint_state: None | bool
     hint_word: str
@@ -336,6 +337,9 @@ class StrandsGame(StrandsGameBase):
         self.hint_state = None
         self.hint_word = self.game_answers[0][0]
         self.new_game_guesses = []
+        
+        # assume in Play mode
+        self.show_mode = False
 
     def run_dfs(self, start: tuple[int, int], dictionary: set[str],
                 words_sub: set[str]) -> None:
@@ -345,8 +349,15 @@ class StrandsGame(StrandsGameBase):
         to ultimately generate a new file G-with-words.txt with
         an additional section listing all words
         on the board from web2.txt.
-        '''
 
+        Inputs:
+            start (tuple[int, int]): the starting position for dfs
+            dictionary (set[str]): the desired source dictionary
+            words_sub (set[str]): the destination word set
+
+        Returns:
+            Nothing
+        '''
         srt_r, srt_c = start
         stack = [(start, [start], self.game_board.get_letter(Pos(srt_r, srt_c)))]
 
@@ -357,7 +368,6 @@ class StrandsGame(StrandsGameBase):
                 words_sub.add(board_wrd)
 
             for w in self.game_board.find_neighbors(Pos(r, c)):
-                print("found neighbors")
                 nb_r, nb_c = w
 
                 # prevents dfs revisiting
@@ -371,6 +381,7 @@ class StrandsGame(StrandsGameBase):
         running DFS starting at each one to construct a set
         of all dictionary words in the game.
         """
+
         with open("assets/web2.txt", encoding="utf-8") as f:
             print("opened original dictionary")
             dictionary = set(line.strip().lower() for line in f.readlines())
@@ -393,7 +404,7 @@ class StrandsGame(StrandsGameBase):
             for line in old.readlines():
                 new.write(line)
 
-            new.write("\n Relevant Dictionary Words:\n")
+            new.write("\nRelevant Dictionary Words:\n")
             for word in sorted(words_sub):
                 new.write(word + "\n")
 
@@ -457,7 +468,7 @@ class StrandsGame(StrandsGameBase):
 
         return None
 
-    def submit_strand(self, strand: StrandBase, show=False) -> tuple[str, bool] | str:
+    def submit_strand(self, strand: StrandBase) -> tuple[str, bool] | str:
 
         # ensures pos arguments of strand exist on board
         try:
@@ -470,7 +481,7 @@ class StrandsGame(StrandsGameBase):
 
         # check if too short
         if len(board_word) < 3:
-            if not show:
+            if not self.show_mode:
                 error_sound = pygame.mixer.Sound("assets/error_008.ogg")
                 error_sound.play()
             return "Too short"
@@ -485,12 +496,12 @@ class StrandsGame(StrandsGameBase):
                         # clearing the hint
                         self.hint_state = None
 
-                    if not show:
+                    if not self.show_mode:
                         correct_sound = pygame.mixer.Sound("assets/confirmation_001.ogg")
                         correct_sound.play()
                     return (asw_word, True)
 
-                if not show:
+                if not self.show_mode:
                     error_sound = pygame.mixer.Sound("assets/error_008.ogg")
                     error_sound.play()
 

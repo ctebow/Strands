@@ -202,8 +202,9 @@ class GuiStrands:
                                     self.hint_circles = {}
 
             if self.show and self.lett_locs:
+                self.game.show_mode = True
                 for _, show_strd in self.game.answers():
-                    self.game.submit_strand(show_strd, self.show)
+                    self.game.submit_strand(show_strd)
                     self.append_found_solutions(self.col_width / 2)
 
                 if end == 0:
@@ -239,7 +240,7 @@ class GuiStrands:
         elif frame == "cat3":
             frame_r: ArtGUIBase = ArtGUIHoneycomb(FRAME_WIDTH)
         elif frame == "cat4":
-            frame_r: ArtGUIBase = ArtGUIDrawStrands(125)
+            frame_r: ArtGUIBase = ArtGUIDrawStrands(FRAME_WIDTH)
         else:
             raise ValueError("Frame type is not supported. Input new frame.")
 
