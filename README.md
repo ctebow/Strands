@@ -8,8 +8,10 @@ Team members:
 
 Enhancements:
 
-1) GUI-SOUND: Can pass in normal Play or Show mode command-line arguments to test,
-although enhancement for Play mode is more extensive. I've added sounds
+1) GUI-SOUND: For testing the game with sounds, use the optional
+command-line parameter --sounds in addition to all the other normal
+Play or Show mode command-line arguments. Note the Play mode sounds
+are more extensive. I've added sounds
 from https://kenney.nl/assets/category:Audio?search=&sort=update
 for starting the game, quitting/exiting, clicking, clearing by
 hitting escape, submitting a too short, non-dictionary, or repeated word,

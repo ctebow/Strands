@@ -241,6 +241,7 @@ class StrandsGame(StrandsGameBase):
     game_answers: list[tuple[str, Strand]]
     game_file: str
     show_mode: bool
+    sound_mode: bool
     tot_game_guesses: list[tuple[str, Strand]]
     hint_state: None | bool
     hint_word: str
@@ -340,6 +341,9 @@ class StrandsGame(StrandsGameBase):
         
         # assume in Play mode
         self.show_mode = False
+
+        # sounds enhancement
+        self.sound_mode = False
 
     def run_dfs(self, start: tuple[int, int], dictionary: set[str],
                 words_sub: set[str]) -> None:
@@ -481,9 +485,10 @@ class StrandsGame(StrandsGameBase):
 
         # check if too short
         if len(board_word) < 3:
-            if not self.show_mode:
+            if not self.show_mode and self.sound_mode:
                 error_sound = pygame.mixer.Sound("assets/error_008.ogg")
                 error_sound.play()
+
             return "Too short"
 
         # check if answer/already found answer
@@ -496,12 +501,12 @@ class StrandsGame(StrandsGameBase):
                         # clearing the hint
                         self.hint_state = None
 
-                    if not self.show_mode:
+                    if not self.show_mode and self.sound_mode:
                         correct_sound = pygame.mixer.Sound("assets/confirmation_001.ogg")
                         correct_sound.play()
                     return (asw_word, True)
 
-                if not self.show_mode:
+                if not self.show_mode and self.sound_mode:
                     error_sound = pygame.mixer.Sound("assets/error_008.ogg")
                     error_sound.play()
 
@@ -516,14 +521,14 @@ class StrandsGame(StrandsGameBase):
                 # hint meter updates when this is appended
                 self.new_game_guesses.append((board_word, strand))
                 
-                if not self.show_mode:
+                if not self.show_mode and self.sound_mode:
                     dict_sound = pygame.mixer.Sound("assets/maximize_006.ogg")
                     dict_sound.play()
 
                 return (board_word, False)
             # already found
             else:
-                if not self.show_mode:
+                if not self.show_mode and self.sound_mode:
                     error_sound = pygame.mixer.Sound("assets/error_008.ogg")
                     error_sound.play()
 
@@ -531,13 +536,16 @@ class StrandsGame(StrandsGameBase):
 
         # word is not a valid dictionary word
         else:
-            error_sound = pygame.mixer.Sound("assets/error_008.ogg")
-            error_sound.play()
+            if self.sound_mode:
+                error_sound = pygame.mixer.Sound("assets/error_008.ogg")
+                error_sound.play()
             return "Not in word list"
 
     def use_hint(self) -> tuple[int, bool] | str:
-        hint_sound = pygame.mixer.Sound("assets/question_003.ogg")
-        hint_sound.play()
+
+        if self.sound_mode:
+            hint_sound = pygame.mixer.Sound("assets/question_003.ogg")
+            hint_sound.play()
 
         # check if we need to reset hint state to false (NEW LOGIC)
         if self.hint_word:

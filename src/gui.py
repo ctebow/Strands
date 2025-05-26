@@ -63,7 +63,7 @@ class GuiStrands:
     # list of active lines, a list of tuples containing start and end positions
     strd_lines: list[tuple[Loc, Loc]]
 
-    def __init__(self, show: bool, brd_filename: str, hint_threshold: int, frame: str) -> None:
+    def __init__(self, show: bool, brd_filename: str, hint_threshold: int, frame: str, sounds: bool) -> None:
         """
         Initializes the GUI application.
         """
@@ -71,6 +71,9 @@ class GuiStrands:
         pygame.mixer.init()
 
         self.game: StrandsGameBase = StrandsGame(brd_filename, hint_threshold)
+        if sounds:
+            self.game.sound_mode = True
+
         board = self.game.board()
 
         # dynamically setting up factors for window dimensions
@@ -120,9 +123,9 @@ class GuiStrands:
         self.strd_lines = []
 
         # run event loop
-        self.run_event_loop(frame)
+        self.run_event_loop(frame, sounds)
 
-    def run_event_loop(self, frame: str) -> None:
+    def run_event_loop(self, frame: str, sounds: bool) -> None:
         """
         The event loop for our application. Inside this loop, we will
         repeatedly perform the following operations:
@@ -130,18 +133,27 @@ class GuiStrands:
             1. Check for new events
             2. If there are any new events, process the events.
             3. Re-draw the window
+        
+        Inputs:
+            frame (str): desired slice from frame .txt file
+            sounds (bool): True is sounds on, False otherwise
+        
+        Returns:
+            Nothing
         """
         end = 0
-        enter_sound = pygame.mixer.Sound("assets/maximize_008.ogg")
-        enter_sound.play()
+        if sounds:
+            enter_sound = pygame.mixer.Sound("assets/maximize_008.ogg")
+            enter_sound.play()
         while True:
             events = pygame.event.get()
 
             for event in events:
 
                 if event.type == pygame.QUIT:
-                    exit_sound = pygame.mixer.Sound("assets/close_002.ogg")
-                    exit_sound.play()
+                    if sounds:
+                        exit_sound = pygame.mixer.Sound("assets/close_002.ogg")
+                        exit_sound.play()
                     # from official pygame documentation
                     pygame.time.delay(int(exit_sound.get_length() * 1000))
 
@@ -153,8 +165,9 @@ class GuiStrands:
 
                 elif event.type == pygame.KEYUP:
                     if event.key == pygame.K_q:
-                        exit_sound = pygame.mixer.Sound("assets/close_002.ogg")
-                        exit_sound.play()
+                        if sounds:
+                            exit_sound = pygame.mixer.Sound("assets/close_002.ogg")
+                            exit_sound.play()
                         pygame.time.delay(int(exit_sound.get_length() * 1000))
 
                         pygame.quit()
@@ -167,8 +180,9 @@ class GuiStrands:
                         ):
 
                         if event.key == pygame.K_ESCAPE:
-                            clear_sound = pygame.mixer.Sound("assets/scratch_005.ogg")
-                            clear_sound.play()
+                            if sounds:
+                                clear_sound = pygame.mixer.Sound("assets/scratch_005.ogg")
+                                clear_sound.play()
 
                             self.temp_circles = {}
                             self.temp_circs_ordering = []
@@ -184,8 +198,9 @@ class GuiStrands:
                     self.game.game_over()
                     ):
                     if event.type == pygame.MOUSEBUTTONUP:
-                        click_sound = pygame.mixer.Sound("assets/click_005.ogg")
-                        click_sound.play()
+                        if sounds:
+                            click_sound = pygame.mixer.Sound("assets/click_005.ogg")
+                            click_sound.play()
                         x_click, y_click = event.pos
                         possible_circs = self.gen_pos_circs(self.col_width / 2)
 
@@ -219,8 +234,9 @@ class GuiStrands:
                 self.game.game_over() and
                 end == 0
                 ):
-                click_sound = pygame.mixer.Sound("assets/jingles_STEEL02.ogg")
-                click_sound.play()
+                if sounds:
+                    click_sound = pygame.mixer.Sound("assets/jingles_STEEL02.ogg")
+                    click_sound.play()
                 print("The game is over! Exit anytime.")
                 end += 1
 
@@ -229,9 +245,13 @@ class GuiStrands:
         """
         Draws the interior and exterior frame and also
         the game board.
+
+        Inputs:
+            frame (str): desired slice from frame .txt file
+
+        Returns:
+            Nothing
         """
-        # fills entire background with grey
-        valid_frames = {"9slices", "cat2", "cat3", "cat4"}
 
         if frame == "9slices":
             frame_r: ArtGUIBase = ArtGUI9Slice(FRAME_WIDTH)
@@ -653,8 +673,10 @@ class GuiStrands:
               help="Loads desired hint threshold.")
 @click.option("-a", "--art", "frame", type=str, default="cat3",
               help="Loads desired art frame.")
+@click.option("--sounds", is_flag=True, help="Pass if you desire sounds.")
 
-def main(show: bool, game: str | None, hint_threshold: int, frame: str):
+
+def main(show: bool, game: str | None, hint_threshold: int, frame: str, sounds: bool):
     '''
     Main function to fun the GUI including clicker
     functionality.
@@ -678,7 +700,7 @@ def main(show: bool, game: str | None, hint_threshold: int, frame: str):
             print("Frame type is not supported. Input new frame.")
             sys.exit()
 
-    GuiStrands(show, brd_filename, hint_threshold, frame)
+    GuiStrands(show, brd_filename, hint_threshold, frame, sounds)
 
 if __name__ == "__main__":
     main()
