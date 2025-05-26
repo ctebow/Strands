@@ -132,6 +132,8 @@ class GuiStrands:
             3. Re-draw the window
         """
         end = 0
+        enter_sound = pygame.mixer.Sound("assets/maximize_008.ogg")
+        enter_sound.play()
         while True:
             events = pygame.event.get()
 
@@ -201,7 +203,7 @@ class GuiStrands:
 
             if self.show and self.lett_locs:
                 for _, show_strd in self.game.answers():
-                    self.game.submit_strand(show_strd)
+                    self.game.submit_strand(show_strd, self.show)
                     self.append_found_solutions(self.col_width / 2)
 
                 if end == 0:

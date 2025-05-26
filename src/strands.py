@@ -207,7 +207,7 @@ class StrandsGame(StrandsGameBase):
     new_game_guesses: list[tuple[str, Strand]]
     word_dictionary: list[str]
 
-    def __init__(self, game_file: str | list[str], hint_threshold: int):
+    def __init__(self, game_file: str | list[str], hint_threshold: int = 3):
 
         # for relevant sound enhancements
         pygame.mixer.init()
@@ -356,7 +356,7 @@ class StrandsGame(StrandsGameBase):
 
         return None
 
-    def submit_strand(self, strand: StrandBase) -> tuple[str, bool] | str:
+    def submit_strand(self, strand: StrandBase, show=False) -> tuple[str, bool] | str:
 
         # ensures pos arguments of strand exist on board
         try:
@@ -369,8 +369,9 @@ class StrandsGame(StrandsGameBase):
 
         # check if too short
         if len(board_word) < 3:
-            error_sound = pygame.mixer.Sound("assets/error_008.ogg")
-            error_sound.play()
+            if not show:
+                error_sound = pygame.mixer.Sound("assets/error_008.ogg")
+                error_sound.play()
             return "Too short"
 
         # check if answer/already found answer
@@ -383,12 +384,15 @@ class StrandsGame(StrandsGameBase):
                         # clearing the hint
                         self.hint_state = None
 
-                    correct_sound = pygame.mixer.Sound("assets/confirmation_001.ogg")
-                    correct_sound.play()
+                    if not show:
+                        correct_sound = pygame.mixer.Sound("assets/confirmation_001.ogg")
+                        correct_sound.play()
                     return (asw_word, True)
 
-                error_sound = pygame.mixer.Sound("assets/error_008.ogg")
-                error_sound.play()
+                if not show:
+                    error_sound = pygame.mixer.Sound("assets/error_008.ogg")
+                    error_sound.play()
+
                 return "Already found"
 
         # check if dictionary word/already found dictionary word
@@ -399,14 +403,18 @@ class StrandsGame(StrandsGameBase):
 
                 # hint meter updates when this is appended
                 self.new_game_guesses.append((board_word, strand))
+                
+                if not show:
+                    dict_sound = pygame.mixer.Sound("assets/maximize_006.ogg")
+                    dict_sound.play()
 
-                dict_sound = pygame.mixer.Sound("assets/maximize_006.ogg")
-                dict_sound.play()
                 return (board_word, False)
             # already found
             else:
-                error_sound = pygame.mixer.Sound("assets/error_008.ogg")
-                error_sound.play()
+                if not show:
+                    error_sound = pygame.mixer.Sound("assets/error_008.ogg")
+                    error_sound.play()
+
                 return "Already found"
 
         # word is not a valid dictionary word
