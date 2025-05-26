@@ -516,14 +516,14 @@ class StrandsGame(StrandsGameBase):
                 # hint meter updates when this is appended
                 self.new_game_guesses.append((board_word, strand))
                 
-                if not show:
+                if not self.show_mode:
                     dict_sound = pygame.mixer.Sound("assets/maximize_006.ogg")
                     dict_sound.play()
 
                 return (board_word, False)
             # already found
             else:
-                if not show:
+                if not self.show_mode:
                     error_sound = pygame.mixer.Sound("assets/error_008.ogg")
                     error_sound.play()
 
