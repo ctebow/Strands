@@ -1,6 +1,6 @@
 """
 GUI Implementation for Milestone 3:
-Pos, StrandFake, BoardFake, StrandsGameFake
+Pos, Strand, Board, StrandsGame
 """
 import sys
 from typing import TypeAlias
