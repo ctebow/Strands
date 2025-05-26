@@ -65,5 +65,9 @@ instead of only ones above the hint threshold, this solves all the problems.
 GUI: This component received two S scores in Milestone 2.
 
 TUI:
-Art:
+
+Art: This component received two S scores in Milestone 2. There was an instructor comment
+on adding docstrings for various student-created functions and classes, which has been 
+resolved by adding docstrings to functions where there were no docstrings previously. 
+
 QA:
