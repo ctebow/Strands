@@ -397,7 +397,7 @@ raw: dict[str, tuple[tuple[int, int], tuple[Step, ...]]]) -> list[HashStrand]:
         return filtered
     
     def get_answer_strands(self, 
-                           all_strands: list[HashStrand]) -> dict[HashStrand]:
+                    all_strands: list[HashStrand]) -> dict[str, HashStrand]:
         """
         For a solver implementation that assumes the solver knows each answer
         word string, but does not know it's starting position or steps.
@@ -519,11 +519,12 @@ raw: dict[str, tuple[tuple[int, int], tuple[Step, ...]]]) -> list[HashStrand]:
         # set up collectors
 
         all_words = self.filtered
+        boards_new = set(boards)
         placeable = set()
-        better_boards = []
+        better_boards: list[list[HashStrand]] = []
 
         # go through boards once, try to place words that can still be placed
-        for board in boards:
+        for board in boards_new:
             mask = self.create_mask(board)
             board_lst = list(board)
             for strand in all_words:
@@ -536,9 +537,9 @@ raw: dict[str, tuple[tuple[int, int], tuple[Step, ...]]]) -> list[HashStrand]:
 
         # return the better boards and the other words that can be placed
         result = []
-        for board in better_boards:
+        for board_n in better_boards:
             dct = {}
-            for strand in board:
+            for strand in board_n:
                 word = self.board.evaluate_strand(strand)
                 dct[word] = strand
             result.append(dct)
