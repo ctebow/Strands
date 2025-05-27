@@ -6,7 +6,7 @@ positions and steps for each answer.
 This file also contains a partially complete general solver, which when given
 only a game board, returns all answer strands.
 
-To run the working solver, run "src/solver.py"
+To run the working solver, run "src/solver.py -g boards/BOARDNAME.txt"
 
 To see the progress on the general solver, run "src/solver.py --type general"
 
@@ -134,7 +134,7 @@ class Trie:
             
 class Mask:
     """
-    FOR GENERAL SOLVER.Integer mask intended to represent a typical strands 
+    FOR GENERAL SOLVER. Integer mask intended to represent a typical strands 
     gameboard. More efficient than using a list of bools to keep track 
     of positions.
     """   
@@ -337,8 +337,6 @@ raw: dict[str, tuple[tuple[int, int], tuple[Step, ...]]]) -> list[HashStrand]:
                 if len(path) > 2:
                     if path not in all_words:
                         all_words[path] = (start, steps[:-1])
-
-
 
             # double check indices and if we've been here
             if not (0 <= r < self.rows and 0 <= c < self.cols):
