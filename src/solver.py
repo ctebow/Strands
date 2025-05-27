@@ -49,51 +49,39 @@ currently struggling with getting rid of "good" words that aren't actually
 theme words.
     - I also should recurse more efficiently when placing the top 50 words.
 """
-from strands import Pos, Board, Strand, Step
 import click
+from strands import Pos, Board, Strand, Step
+from typing import Optional
 
 @click.command()
 @click.option("-t", "--type", required=False, help="Use General Solver")
 @click.option("-g", "--game", required=True, help="Input game board name")
-def cmd(type, game) -> None:
+def cmd(type: str, game: str) -> None:
     """
     Sets up command line arguments. 
     """
     if type:
         if type == "general":
             solver = Solver(game)
-            raw = solver.all_words()
-            sorts = solver.sort_words(raw)
-            placed = solver.place_top_50(sorts, 6)
-            ans = solver.greedy_place(placed)
+            ans = solver.show_general_result()
+            print("")
             print("BEST BOARDS AS OF NOW: LONGEST STRANDS PLACED + EXTRA")
+            print("")
             for board in ans:
-                print(board.keys())
+                keys = board.keys()
+                print(keys)
                 print("")
         else:
             print("Specify <general> to run general")
             
     else:
         solver = Solver(game)
-        words = solver.all_words()
-        all_strands = solver.convert_to_strand(words)
-        strands = solver.get_answer_strands(all_strands)
-
-        # converting from objects to something readable
-
-        result = {}
-        for word in strands.keys():
-            start = strands[word].start 
-            positions = strands[word].positions()
-            pos_lst = []
-            for position in positions:
-                r = position.r
-                c = position.c
-                pos_lst.append((r, c))
-            r = start.r
-            c = start.c
-            result[word] = ((r, c), pos_lst)
-        print(result)
+        answers = solver.show_answers_given_result()
+        solver.update_board_with_answers(answers)
+        print("")
+        print("ANSWERS WITH POSITIONS")
+        print(answers)
+        print("")
 
 # for navigating around the gameboard and building strands
 PERMS = {(-1, -1): Step.NW, 
@@ -110,11 +98,11 @@ class TrieNode:
     Node for Trie class. Stores a character and all unique characters that come
     after the character in a set of words. 
     """
-    children: dict["TrieNode"]
-    char: str
+    children: dict[str, "TrieNode"]
+    char: Optional[str]
     is_end: bool
 
-    def __init__(self, char=None):
+    def __init__(self, char: Optional[str]=None):
         self.children = {}
         self.char = char
         self.is_end = False
@@ -125,7 +113,10 @@ class Trie:
     of words. Each node has a unique character and a dictionary of unique 
     characters that may come after it in any given word. 
     """
-    def __init__(self):
+
+    root: TrieNode
+
+    def __init__(self) -> None:
         self.root = TrieNode()
 
     def add(self, word: str) -> None:
@@ -147,8 +138,11 @@ class Mask:
     gameboard. More efficient than using a list of bools to keep track 
     of positions.
     """   
+    mask: int
+    rows: int
+    cols: int
 
-    def __init__(self, rows, cols):
+    def __init__(self, rows: int, cols: int):
         self.mask = 0
         self.rows = rows
         self.cols = cols
@@ -174,7 +168,7 @@ class Mask:
         mask = self.mask
         self.mask = mask & ~(1 << (r * self.cols + c))
     
-    def is_val(self, r: int, c: int) -> bool:
+    def is_val(self, r: int, c: int) -> int:
         """
         Check if a certain position in the mask is set to true. 
         """
@@ -205,13 +199,13 @@ class HashPos(Pos):
     """
     FOR GENERAL SOLVER. Child class of Pos to make it hashable. 
     """
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Pos):
             raise NotImplementedError
         
         return other.c == self.c and other.r == self.r
     
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.r, self.c))
 
 
@@ -220,7 +214,7 @@ class HashStrand(Strand):
     FOR GENERAL SOLVER. Child class of Strand to make it hashable.
     """
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.start, tuple(self.steps)))
     
 class Solver:
@@ -236,16 +230,16 @@ class Solver:
     each time as of now. 
     """
     game_theme: str
-    game_file: str | list[str]
+    game_file: str
     board_lst: list[list[str]]
     answers: list[str]
     board: Board
-    filtered: list[Strand]
+    filtered: list[HashStrand]
     dictionary: list[str]
     cols: int
     rows: int
 
-    def __init__(self, game_file: str | list[str]):
+    def __init__(self, game_file: str):
 
         # process raw txt file
         if isinstance(game_file, str):
@@ -288,6 +282,7 @@ class Solver:
                 if len(lst[0]) > 3:
                     frequency_chart[lst[0]] = int(lst[1])
 
+        self.game_file = game_file
         self.dictionary = word_dictionary
         self.frequency_chart = frequency_chart
         self.board_lst = board_lst
@@ -299,7 +294,7 @@ class Solver:
         self.board_size = self.cols * self.rows
 
     def convert_to_strand(self,
-                 raw: dict[str, tuple[tuple[int, int], Step]]) -> list[Strand]:
+raw: dict[str, tuple[tuple[int, int], tuple[Step, ...]]]) -> list[HashStrand]:
         """
         GIven a dictionary of a word and its raw strand representation, convert
         it into a list of Strands
@@ -312,8 +307,9 @@ class Solver:
             all_strands.append(HashStrand(HashPos(r, c), list(steps)))
 
         return all_strands
+    
 
-    def all_words(self) -> dict[str, tuple[tuple[int, int], Step]]:
+    def all_words(self) -> dict[str, tuple[tuple[int, int], tuple[Step, ...]]]:
         """
         Given a game file, returns a list of all of the valid words found in
         the game file. Words will be represented by the Strand class. 
@@ -330,7 +326,8 @@ class Solver:
         visited = [[False] * self.cols for _ in range(self.rows)]
 
         
-        def all_words_dfs(r, c, node, path, start, steps) -> None:
+        def all_words_dfs(r: int, c: int, node: TrieNode, 
+            path: str, start: tuple[int, int], steps: tuple[Step, ...]) -> None:
             """
             Helper function for all_words. Recursively traverses a game board
             in the form of a list until every letter has been visited. 
@@ -374,7 +371,7 @@ class Solver:
 
     
     def sort_words(self, raw_words: dict[str, tuple[tuple[int, int],
-                                          tuple[Step]]]) -> list[Strand]:
+                                        tuple[Step, ...]]]) -> list[HashStrand]:
         """
         Filtering function for all collected words. Uses a frequency score, 
         cuts words that are too short or too long. Then turns words into strands
@@ -401,7 +398,8 @@ class Solver:
 
         return filtered
     
-    def get_answer_strands(self, all_strands: list[Strand]) -> list[Strand]:
+    def get_answer_strands(self, 
+                           all_strands: list[HashStrand]) -> dict[HashStrand]:
         """
         For a solver implementation that assumes the solver knows each answer
         word string, but does not know it's starting position or steps.
@@ -418,6 +416,8 @@ class Solver:
                 found_answers[word] = strand
 
         return found_answers
+
+
 
     def can_place(self, strand: Strand, mask: Mask) -> bool:
         """
@@ -455,7 +455,7 @@ class Solver:
             c = pos.c
             mask.clear_val(r, c)
 
-    def create_mask(self, board: list[Strand]) -> Mask:
+    def create_mask(self, board: frozenset[HashStrand]) -> Mask:
         mask = Mask(self.rows, self.cols)
 
         for strand in board:
@@ -467,7 +467,8 @@ class Solver:
         return mask
 
 
-    def place_top_50(self, words: list[Strand], threshold) -> set[str]:
+    def place_top_50(self, words: list[HashStrand], 
+                     threshold: int) -> frozenset[frozenset[HashStrand]]:
         """
         Given a list of probable, largest words, place the top 50 and fit from
         there. 
@@ -482,8 +483,8 @@ class Solver:
         boards = set()
 
 
-        def placer_dfs(strand: Strand,
-                        placed: tuple[Strand], mask: Mask, threshold):
+        def placer_dfs(strand: HashStrand,
+            placed: tuple[HashStrand,...], mask: Mask, threshold: int) -> None:
             """
             Depth first algorithm to place top 50 strands on a board. 
             """
@@ -508,7 +509,9 @@ class Solver:
         return frozenset(boards)
     
 
-    def greedy_place(self, boards: frozenset[frozenset[Strand]]) -> ...:
+    def greedy_place(self, 
+                     boards: frozenset[frozenset[HashStrand]]) -> list[dict[str,
+                                                                HashStrand]]:
         """
         Attempt to fit remaining strands to partial boards. Use strategy of
         placing as much of the filtered words in the board, and then check
@@ -516,6 +519,7 @@ class Solver:
         again. Each word that can get placed will be noted. 
         """
         # set up collectors
+
         all_words = self.filtered
         placeable = set()
         better_boards = []
@@ -543,6 +547,75 @@ class Solver:
 
         return result
 
+    def show_general_result(self) -> list[dict[str, HashStrand]]:
+        """
+        Function that obtains current result from using the general solver.
+        """
+        raw = self.all_words()
+        sorts = self.sort_words(raw)
+        placed = self.place_top_50(sorts, 6)
+        ans = self.greedy_place(placed)
+
+        return ans
+
+    def show_answers_given_result(self) -> dict[str, 
+                            tuple[tuple[int, int], list[tuple[int, int]]]]:
+        """
+        Returns the calculated answers for the case where the solver is given
+        the game answers as strings as a nice list of strings. 
+        """
+
+        words = self.all_words()
+        all_strands = self.convert_to_strand(words)
+        strands = self.get_answer_strands(all_strands)
+
+        # converting from objects to something readable
+        result = {}
+        for word in strands.keys():
+            start = strands[word].start 
+            positions = strands[word].positions()
+            pos_lst = []
+            for position in positions:
+                r = position.r
+                c = position.c
+                pos_lst.append((r, c))
+            r = start.r
+            c = start.c
+            result[word] = ((r, c), pos_lst)
+
+        return result
+    
+    def update_board_with_answers(self, answers: dict[str, 
+                    tuple[tuple[int, int], list[tuple[int, int]]]]) -> None:
+        """
+        Takes found answers and creates a new game board file with all the 
+        answers placed below the game board, in their usual location. The
+        start position and steps are zero-indexed. Writes the coordinates of
+        each strand into a new file, which can be found in assets as
+        BOARDNAME-solved.txt
+        """
+
+        assert self.game_file.endswith(".txt") and \
+            self.game_file.startswith("boards/")
+        splice = self.game_file[7: -4]
+        outfile = "assets/" + splice + "-solved.txt"
+    
+        with open(self.game_file, encoding="utf-8") as old, \
+            open(outfile, "w", encoding="utf-8") as new:
+
+            old_lines = old.readlines()
+            for line in old_lines[:10]:
+                new.write(line)
+
+            new.write("\nSolved Answers:\n")
+            for key in answers:
+                s1 = str(answers[key][0])
+                spce = 12 - len(key)
+
+                steps = ""
+                for tup in answers[key][1]:
+                    steps += str(tup) + " "
+                new.write(key + " " * spce + s1 +  " " + steps +"\n")
 
 if __name__ == "__main__":
     cmd()
