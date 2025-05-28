@@ -71,17 +71,16 @@ irrespective of the hint state, as desired. Along with a small GUI
 fix (marked by NEW LOGIC) so that any h key press would trigger self.handle_hint_conditions()
 instead of only ones above the hint threshold, this solves all the problems. 
 
-### TUI:
+### GUI: This component received two S scores in Milestone 2.
+
+### TUI: Milestone 1: SS Milestone 2: NS
+
 Built the full text-based interface with play and show modes
 Fixed hint logic so hints only show when ready and reset properly after use
 Added clear input handling for submitting strands with helpful error messages
 Used colors to highlight found words, hints, and selections for better clarity
 Improved game info display (theme, hints, found words) and screen refreshing
 Added docstrings and comments for easier understanding
-
-### GUI: This component received two S scores in Milestone 2.
-
-### TUI: Milestone 1: SS Milestone 2: NS
 
 ### Art: This component received two S scores in Milestone 2. There was an instructor comment
 on adding docstrings for various student-created functions and classes, which has been 
