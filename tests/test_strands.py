@@ -279,8 +279,8 @@ def test_play_game_directions_once() -> None:
     assert result3 == ("south", True)
     assert result4 == ("north", True)
 
-    found_words = {word for word, _ in game.answers()}
-    assert found_words == {"directions", "east", "west", "south", "north"}
+    found = [word for word, _ in game.answers()]
+    assert found == ["east", "west", "south", "north", "directions"]
 
 def test_play_game_directions_twice() -> None:
     game = StrandsGame("boards/directions.txt")
@@ -291,20 +291,9 @@ def test_play_game_directions_twice() -> None:
     assert game.submit_strand(Strand(Pos(0, 0), [Step.E, Step.E, Step.E])) == "Already found"
     assert game.submit_strand(Strand(Pos(1, 3), [Step.W, Step.W, Step.W])) == "Already found"
 
-    found = {word for word, _ in game.answers()}
-    assert found == {"directions", "north", "south", "east", "west"}
+    found = [word for word, _ in game.answers()]
+    assert found == ["east", "west", "south", "north", "directions"]
 
-def test_play_game_directions_three_times() -> None:
-   game = StrandsGame("boards/directions.txt")
-   
-   assert game.submit_strand(Strand(Pos(0, 0), [Step.E, Step.E, Step.E])) == ("east", True)
-   assert game.submit_strand(Strand(Pos(1, 3), [Step.W, Step.W, Step.W])) == ("west", True)
-   assert game.submit_strand(Strand(Pos(2, 0), [Step.S, Step.S, Step.S, Step.S])) == ("south", True)
-   assert game.submit_strand(Strand(Pos(6, 1), [Step.N, Step.N, Step.N, Step.N])) == ("north", True)
-   assert game.submit_strand(Strand(Pos(2, 2), [Step.S, Step.NE, Step.S, Step.S, Step.S, Step.NW, Step.S, Step.SE, Step.W])) == ("directions", True)
-   
-   found = {word for word, strand in game.answers()}
-   assert "directions" in found
 
 def test_play_game_directions_three_times() -> None:
     game = StrandsGame("boards/directions.txt")
@@ -339,8 +328,8 @@ def test_play_game_directions_more() -> None:
 
     assert result == ("directions", True) or result == "Already found"
 
-    found = {word for word, _ in game.answers()}
-    assert found == {"east", "west", "south", "north", "directions"}
+    found = [word for word, _ in game.answers()]
+    assert found == ["east", "west", "south", "north", "directions"]
 
 def test_valid_game_files() -> None:
     for filename in os.listdir("boards"):
@@ -358,13 +347,20 @@ def test_valid_game_files() -> None:
 def test_play_game_cs142_hints_0() -> None:
     game = StrandsGame("boards/cs-142.txt", hint_threshold=0)
 
-    game.submit_strand(Strand(Pos(0, 0), [Step.S, Step.S, Step.E]))  # cone
+    word, is_theme = game.submit_strand(Strand(Pos(0, 0), [Step.S, Step.S, Step.E]))  # cone
+    assert not is_theme
     game.use_hint()
-    game.submit_strand(Strand(Pos(1, 1), [Step.E, Step.E, Step.NE]))  # fort
+    
+    word, is_theme = game.submit_strand(Strand(Pos(1, 1), [Step.E, Step.E, Step.NE]))  # fort
+    assert not is_theme
     game.use_hint()
-    game.submit_strand(Strand(Pos(0, 1), [Step.SE, Step.E, Step.SE]))  # sort
+    
+    word, is_theme = game.submit_strand(Strand(Pos(0, 1), [Step.SE, Step.E, Step.SE]))  # sort
+    assert not is_theme
     game.use_hint()
-    game.submit_strand(Strand(Pos(2, 3), [Step.W, Step.NE, Step.NW]))  # worm
+    
+    word, is_theme = game.submit_strand(Strand(Pos(2, 3), [Step.W, Step.NE, Step.NW]))  # worm
+    assert not is_theme
     assert game.use_hint() is not None
 
 def test_play_game_cs142_hints_1() -> None:
@@ -389,13 +385,20 @@ def test_play_game_cs142_hints_1() -> None:
 def test_play_game_directions_hints_0() -> None:
     game = StrandsGame("boards/directions.txt", hint_threshold=0)
 
-    game.submit_strand(Strand(Pos(1, 1), [Step.S, Step.NE, Step.S]))  # shed
+    word, is_theme = game.submit_strand(Strand(Pos(1, 1), [Step.S, Step.NE, Step.S]))  # shed
+    assert not is_theme
     game.use_hint()
-    game.submit_strand(Strand(Pos(2, 1), [Step.SE, Step.NE, Step.S]))  # hire
+    
+    word, is_theme = game.submit_strand(Strand(Pos(2, 1), [Step.SE, Step.NE, Step.S]))  # hire
+    assert not is_theme
     game.use_hint()
-    game.submit_strand(Strand(Pos(2, 2), [Step.S, Step.NE, Step.S]))  # dire
+    
+    word, is_theme = game.submit_strand(Strand(Pos(2, 2), [Step.S, Step.NE, Step.S]))  # dire
+    assert not is_theme
     game.use_hint()
-    game.submit_strand(Strand(Pos(3, 1), [Step.E, Step.NE, Step.S]))  # tire
+   
+    word, is_theme = game.submit_strand(Strand(Pos(3, 1), [Step.E, Step.NE, Step.S]))  # tire
+    assert not is_theme
     assert game.use_hint() is not None
 
 def test_play_game_directions_hints_1() -> None:
