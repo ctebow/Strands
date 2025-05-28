@@ -354,3 +354,65 @@ def test_valid_game_files() -> None:
                 StrandsGame(filepath)
             except Exception as e:
                 raise AssertionError(f"Failed to load {filename}: {e}")
+
+def test_play_game_cs142_hints_0() -> None:
+    game = StrandsGame("boards/cs-142.txt", hint_threshold=0)
+
+    game.submit_strand(Strand(Pos(0, 0), [Step.S, Step.S, Step.E]))  # cone
+    game.use_hint()
+    game.submit_strand(Strand(Pos(1, 1), [Step.E, Step.E, Step.NE]))  # fort
+    game.use_hint()
+    game.submit_strand(Strand(Pos(0, 1), [Step.SE, Step.E, Step.SE]))  # sort
+    game.use_hint()
+    game.submit_strand(Strand(Pos(2, 3), [Step.W, Step.NE, Step.NW]))  # worm
+    assert game.use_hint() is not None
+
+def test_play_game_cs142_hints_1() -> None:
+    game = StrandsGame("boards/cs-142.txt", hint_threshold=1)
+
+    word, is_theme = game.submit_strand(Strand(Pos(0, 0), [Step.S, Step.S, Step.E]))  # cone
+    assert not is_theme
+    assert game.use_hint() != "No hint yet"
+
+    word, is_theme = game.submit_strand(Strand(Pos(1, 1), [Step.E, Step.E, Step.NE]))  # fort
+    assert not is_theme
+    assert game.use_hint() != "No hint yet"
+
+    word, is_theme = game.submit_strand(Strand(Pos(0, 1), [Step.SE, Step.E, Step.SE]))  # sort
+    assert not is_theme
+    assert game.use_hint() != "No hint yet"
+
+    word, is_theme = game.submit_strand(Strand(Pos(2, 3), [Step.W, Step.NE, Step.NW]))  # worm
+    assert not is_theme
+    assert game.use_hint() != "No hint yet"
+
+def test_play_game_directions_hints_0() -> None:
+    game = StrandsGame("boards/directions.txt", hint_threshold=0)
+
+    game.submit_strand(Strand(Pos(1, 1), [Step.S, Step.NE, Step.S]))  # shed
+    game.use_hint()
+    game.submit_strand(Strand(Pos(2, 1), [Step.SE, Step.NE, Step.S]))  # hire
+    game.use_hint()
+    game.submit_strand(Strand(Pos(2, 2), [Step.S, Step.NE, Step.S]))  # dire
+    game.use_hint()
+    game.submit_strand(Strand(Pos(3, 1), [Step.E, Step.NE, Step.S]))  # tire
+    assert game.use_hint() is not None
+
+def test_play_game_directions_hints_1() -> None:
+    game = StrandsGame("boards/directions.txt", hint_threshold=1)
+
+    word, is_theme = game.submit_strand(Strand(Pos(1, 1), [Step.S, Step.NE, Step.S]))  # shed
+    assert not is_theme
+    assert game.use_hint() != "No hint yet"
+
+    word, is_theme = game.submit_strand(Strand(Pos(2, 1), [Step.SE, Step.NE, Step.S]))  # hire
+    assert not is_theme
+    assert game.use_hint() != "No hint yet"
+
+    word, is_theme = game.submit_strand(Strand(Pos(2, 2), [Step.S, Step.NE, Step.S]))  # dire
+    assert not is_theme
+    assert game.use_hint() != "No hint yet"
+
+    word, is_theme = game.submit_strand(Strand(Pos(3, 1), [Step.E, Step.NE, Step.S]))  # tire
+    assert not is_theme
+    assert game.use_hint() != "No hint yet"
