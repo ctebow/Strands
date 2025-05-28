@@ -89,4 +89,8 @@ Added docstrings and comments for easier understanding
 on adding docstrings for various student-created functions and classes, which has been 
 resolved by adding docstrings to functions where there were no docstrings previously. 
 
-### QA:
+### QA: Milestone 1: SS Milestone 2: NS
+Ensured use_hint() behavior is tested properly accross different hint thresholds.
+Replaced unordered set comparisons with ordered lists to verify word submission matches the same
+order of the expected.
+
