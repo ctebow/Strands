@@ -37,6 +37,11 @@ the missing starts and steps. The general solver assumes that it only
 knows the game theme and gameboard. More info about the general solver can be found in
 the file, but right now it is able to find about 3-4 of the answers on each board. 
 
+### TUI:
+Color-coded highlights for found strands, hints, and current selections
+Smarter hint system that shows meter and auto-uses hints when available
+Friendly prompts and feedback to guide the player
+Show mode highlights all answers for quick review
 
 ### Revisions:
 
@@ -66,9 +71,17 @@ irrespective of the hint state, as desired. Along with a small GUI
 fix (marked by NEW LOGIC) so that any h key press would trigger self.handle_hint_conditions()
 instead of only ones above the hint threshold, this solves all the problems. 
 
+### TUI:
+Built the full text-based interface with play and show modes
+Fixed hint logic so hints only show when ready and reset properly after use
+Added clear input handling for submitting strands with helpful error messages
+Used colors to highlight found words, hints, and selections for better clarity
+Improved game info display (theme, hints, found words) and screen refreshing
+Added docstrings and comments for easier understanding
+
 ### GUI: This component received two S scores in Milestone 2.
 
-### TUI:
+### TUI: Milestone 1: SS Milestone 2: NS
 
 ### Art: This component received two S scores in Milestone 2. There was an instructor comment
 on adding docstrings for various student-created functions and classes, which has been 
