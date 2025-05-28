@@ -78,7 +78,7 @@ class PosBase(ABC):
         as a step from the current position to the other.
 
         Raises ValueError if the other position is more
-        than two steps away from self.
+        than one step ~~two steps~~ away from self. (UPDATED)
         """
         raise NotImplementedError
 
@@ -155,6 +155,8 @@ class StrandBase(ABC):
         Decide whether or not the strand is folded. That is,
         check whether or not any connection in the strand
         crosses over another connection in the strand.
+
+        UPDATE: You are _not_ required to implement this method.
         """
         raise NotImplementedError
 
@@ -289,8 +291,9 @@ class StrandsGameBase(ABC):
                 regardless the WORDs are stored in the
                 game object with only lowercase letters.
 
-           - that each answer strand has no folds
-             (edges do not cross)
+           - UPDATED: it's okay for an answer strand to be folded
+             ~~that each answer strand has no folds
+               (edges do not cross)~~
 
            - that answers fill the board
 
@@ -332,7 +335,7 @@ class StrandsGameBase(ABC):
         represented as strands. The order of strands in the
         output matches the order in which they were found.
 
-        Note two strands may conflict, meaning they involve
+        Note two strands may overlap ~~conflict~~, meaning they involve
         different sequences of steps yet identify the same
         absolute positions on the board. This method returns
         the strands that have been submitted through the

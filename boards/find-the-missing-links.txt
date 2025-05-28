@@ -1,0 +1,19 @@
+"Find the missing links"
+
+I A N E R T
+L U D V W S
+L E O I U R
+S A L G E S
+K U S A C H
+I O Z I R O
+A E L B A S
+S L A M I A
+
+salami      8 1  n se e e e
+chorizo     5 5  e s w w w w
+andouille   1 2  e s s nw nw s s e
+kielbasa    5 1  s se e e e e s
+liverwurst  4 3  ne n n e s s e n n
+sausages    4 1  e s e e n e e
+
+https://www.nytimes.com/games/strands (5/10/2025)

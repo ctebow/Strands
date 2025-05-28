@@ -1,0 +1,20 @@
+"To a degree"
+
+D H E P S N
+I C E I O P
+P L O T R L
+A M U A O E
+P H D C S G
+O O A E S O
+T R S N A W
+G S I O T N
+
+gown        5 6  s s s
+photo       5 1  e s sw n
+speech      1 5  w w s w n
+tassel      8 5  n n n ne n
+diploma     1 1  s s e e sw w
+procession  2 6  sw s sw s sw sw e e n
+graduation  8 1  ne ne n n e n n e ne
+
+https://www.nytimes.com/games/strands (5/16/2025)

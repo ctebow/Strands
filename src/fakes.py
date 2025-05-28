@@ -135,13 +135,15 @@ class StrandsGameFake(StrandsGameBase):
     """
     Incomplete base class for Strands game logic.
     """
+
     game_theme: str
     hint_thresh: int
+    shown_hint_msg: bool
     game_board: list[list[str]]
     game_answers: list[tuple[str, StrandFake]]
 
-    tot_game_guesses: list[tuple[str, StrandFake]] # does not
-                                                   # include strand guesses,
+    tot_game_guesses: list[tuple[str, StrandFake]] # only
+                                                   # includes strand guesses,
                                                    # since dict not implmeneted
     hint_state: None | bool
     hint_word: str
@@ -158,6 +160,7 @@ class StrandsGameFake(StrandsGameBase):
 
         self.game_theme = lines_lst[0]
         self.hint_thresh = hint_threshold
+        self.shown_hint_msg = False
 
         board_lst: list[list[str]] = []
 
@@ -193,6 +196,9 @@ class StrandsGameFake(StrandsGameBase):
         self.hint_word = self.game_answers[0][0]
         self.new_game_guesses = []
 
+    def get_hint_word(self) -> str:
+        return self.hint_word
+
     def theme(self) -> str:
         return self.game_theme
 
@@ -204,7 +210,7 @@ class StrandsGameFake(StrandsGameBase):
 
     def found_strands(self) -> list[StrandBase]:
 
-        found_strands = []
+        found_strands: list[StrandBase] = []
         for gus_word, _ in self.tot_game_guesses:
             for ans_word, ans_strd in self.game_answers:
                 if gus_word == ans_word:
@@ -224,9 +230,12 @@ class StrandsGameFake(StrandsGameBase):
         return self.hint_thresh
 
     def hint_meter(self) -> int:
+
         level = len(self.new_game_guesses)
-        if level >= self.hint_threshold():
+        if level >= self.hint_threshold() and not self.shown_hint_msg:
+            # only does this once per beating the threshold
             print("You can request a hint!")
+            self.shown_hint_msg = True
 
         return level
 
@@ -240,6 +249,7 @@ class StrandsGameFake(StrandsGameBase):
 
         for ind, (word, strd) in enumerate(self.answers()):
             if strd not in cur_theme_strds:
+                # ith answer is 0-indexed
                 i = ind
                 self.hint_word = word
                 return (i, self.hint_state)
@@ -248,50 +258,58 @@ class StrandsGameFake(StrandsGameBase):
 
     def submit_strand(self, strand: StrandBase) -> tuple[str, bool] | str:
 
-        pos = strand.start
-
         # ensures pos arguments of strand exist on board
         try:
-            self.board().get_letter(pos)
+            board_letters = [self.board().get_letter(pos)
+                             for pos in strand.positions()]
         except ValueError:
             return "Not a theme word"
 
-        for word, strd in self.answers():
-            if word[0] == self.game_board[pos.r][pos.c]:
+        board_word = "".join(board_letters)
+
+        for asw_word, strd in self.answers():
+            if board_word == asw_word:
                 if strd not in self.found_strands():
-                    self.tot_game_guesses.append((word, strd))
-                    self.new_game_guesses.append((word, strd))
+                    self.tot_game_guesses.append((asw_word, strd))
                     # theme word is found basic imp
-                    if word[0] == self.hint_word[0]:
+                    if asw_word == self.hint_word:
                         # clearing the hint
                         self.hint_state = None
-                        self.new_game_guesses = []
 
-                    return (word, True)
+                    return (asw_word, True)
 
                 return "Already found"
 
+        # keeping track of global and refreshed guesses
+        self.tot_game_guesses.append((board_word, strand))
+        self.new_game_guesses.append((board_word, strand))
         return "Not a theme word"
 
     def use_hint(self) -> tuple[int, bool] | str:
 
-        if self.active_hint() is None:
+        if self.hint_state is None:
             # next step in active_hint
             self.hint_state = False
 
-            new_active = self.active_hint()
-            assert new_active is not None
-            return new_active
-
-        intermediate = self.active_hint()
-        assert intermediate is not None
-        _, cond = intermediate
-        if cond is False:
+        elif self.hint_state is False:
             # next step in active_hint
             self.hint_state = True
+        else:
+            return "Use your current hint"
 
-            new_active = self.active_hint()
-            assert new_active is not None
-            return new_active
+        # actually using the hint
+        pre_status = self.hint_meter()
 
-        return "Use your current hint"
+        # trimming hint counter as needed
+        if pre_status >= self.hint_threshold():
+            self.new_game_guesses = self.new_game_guesses[:-3]
+        else:
+            self.new_game_guesses = []
+
+        # case where pre_status can be very large
+        if pre_status - self.hint_thresh < self.hint_thresh:
+            self.shown_hint_msg = False
+
+        new_active = self.active_hint()
+        assert new_active is not None
+        return new_active

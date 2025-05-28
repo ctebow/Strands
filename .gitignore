@@ -169,3 +169,4 @@ cython_debug/
 # CS 142-specific
 *.gz
 tests.json
+__pycache__/
