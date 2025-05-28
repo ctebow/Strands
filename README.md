@@ -37,11 +37,14 @@ the missing starts and steps. The general solver assumes that it only
 knows the game theme and gameboard. More info about the general solver can be found in
 the file, but right now it is able to find about 3-4 of the answers on each board. 
 
-### TUI:
-Color-coded highlights for found strands, hints, and current selections
-Smarter hint system that shows meter and auto-uses hints when available
-Friendly prompts and feedback to guide the player
-Show mode highlights all answers for quick review
+### TUI-CAPTIONS:
+We added helpful captions in the TUI to show what’s going on—like if your word’s too short, not in the dictionary, or if you found a valid one. 
+
+### TUI-SHOW-RESULTS:
+In Show mode, the TUI now clearly shows all the correct answers, highlights what you found, and gives a clean summary at the end.
+
+### TUI-SPECIAL:
+We gave the TUI more visuals —colors for selections, found words, and hint letters.
 
 ### Revisions:
 
