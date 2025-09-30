@@ -29,7 +29,7 @@ For the general solver:
 - Filter these words based on how common they are, a theme score, and length,
 then sort based on size.
     - Theme score is hard to do reasonably, can import some stuff for it for
-    different semantic vectors but may not be worth it currently. 
+different semantic vectors but may not be worth it currently. 
 
 - Take an arbitrary number of the sorted words (I have it set at 50), and
 then generate all possible board layouts with the largest number of these
@@ -50,8 +50,9 @@ theme words.
     - I also should recurse more efficiently when placing the top 50 words.
 """
 import click
+import spacy
 from strands import Pos, Board, Strand, Step
-from typing import Optional
+from typing import Optional, List, Dict, Set
 
 @click.command()
 @click.option("-t", "--type", required=False, help="Use General Solver")
@@ -63,14 +64,18 @@ def cmd(type: str, game: str) -> None:
     if type:
         if type == "general":
             solver = Solver(game)
-            ans = solver.show_general_result()
+            solutions = solver.show_general_result()
             print("")
-            print("BEST BOARDS AS OF NOW: LONGEST STRANDS PLACED + EXTRA")
-            print("")
-            for board in ans:
-                keys = board.keys()
-                print(keys)
-                print("")
+            if solutions:
+                print("Found a solution!")
+                for i, sol in enumerate(solutions):
+                    print(f"--- Solution {i+1} --- ")
+                    for word in sol:
+                        print(word)
+                    print()
+            else:
+                print("No exact cover solution found.")
+
         else:
             print("Specify <general> to run general")
             
@@ -137,7 +142,8 @@ class Mask:
     FOR GENERAL SOLVER. Integer mask intended to represent a typical strands 
     gameboard. More efficient than using a list of bools to keep track 
     of positions.
-    """   
+    """
+   
     mask: int
     rows: int
     cols: int
@@ -238,6 +244,7 @@ class Solver:
     dictionary: list[str]
     cols: int
     rows: int
+    nlp: spacy.Language
 
     def __init__(self, game_file: str):
 
@@ -292,6 +299,7 @@ class Solver:
         self.cols = len(board_lst[0])
         self.rows = len(board_lst)
         self.board_size = self.cols * self.rows
+        self.nlp = spacy.load("en_core_web_md")
 
     def convert_to_strand(self,
 raw: dict[str, tuple[tuple[int, int], tuple[Step, ...]]]) -> list[HashStrand]:
@@ -381,17 +389,20 @@ raw: dict[str, tuple[tuple[int, int], tuple[Step, ...]]]) -> list[HashStrand]:
             if word in self.frequency_chart and self.frequency_chart[word] >200:
                 top_50k[word] = raw_words[word]
         # pop words that are too long
-        for word in top_50k:
+        for word in list(top_50k.keys()):
             if len(word) > 10:
                 top_50k.pop(word)
 
         # sort and transform word list into strands
         all_strands = self.convert_to_strand(top_50k)
         
-        # remove invalid strands, sort largest to smallest
+        # remove invalid strands
         filtered = list(filter(lambda x: not (x.is_cyclic() or x.is_folded()),
                                 all_strands))
-        filtered.sort(key=lambda x: -len(x.positions()))
+        
+        # NEW: Sort by theme similarity and length
+        filtered.sort(key=lambda s: (self.get_theme_similarity(self.board.evaluate_strand(s)), len(s.positions())), reverse=True)
+
         self.filtered = filtered
 
         return filtered
@@ -415,147 +426,27 @@ raw: dict[str, tuple[tuple[int, int], tuple[Step, ...]]]) -> list[HashStrand]:
 
         return found_answers
 
-
-
-    def can_place(self, strand: Strand, mask: Mask) -> bool:
-        """
-        Helper function for place_words, checks if a strand can be placed on
-        the board.
-        """
-
-        positions = strand.positions()
-        for pos in positions:
-            r = pos.r
-            c = pos.c
-            if mask.is_val(r, c):
-                return False
-        return True
-    
-    def place(self, strand: Strand, mask: Mask) -> int:
-        """
-        Helper function for place_words, places a strand on the marked board.
-        """
-        positions = strand.positions()
-        for pos in positions:
-            r = pos.r
-            c = pos.c
-            mask.set_val(r, c)
-
-        return len(positions)
-
-    def remove(self, strand: Strand, mask: Mask) -> None:
-        """
-        Helper function for place_words, removes a strand on the marked board.
-        """
-        positions = strand.positions()
-        for pos in positions:
-            r = pos.r
-            c = pos.c
-            mask.clear_val(r, c)
-
-    def create_mask(self, board: frozenset[HashStrand]) -> Mask:
-        mask = Mask(self.rows, self.cols)
-
-        for strand in board:
-            for pos in strand.positions():
-                r = pos.r
-                c = pos.c
-                mask.set_val(r, c)
-
-        return mask
-
-
-    def place_top_50(self, words: list[HashStrand], 
-                     threshold: int) -> frozenset[frozenset[HashStrand]]:
-        """
-        Given a list of probable, largest words, place the top 50 and fit from
-        there. 
-        """
-        # initialize mask
-        mask = Mask(self.rows, self.cols)
-
-        # take top 50 "best" words
-        top_50 = words[:50]
-
-        # accumulate promising boards
-        boards = set()
-
-
-        def placer_dfs(strand: HashStrand,
-            placed: tuple[HashStrand,...], mask: Mask, threshold: int) -> None:
-            """
-            Depth first algorithm to place top 50 strands on a board. 
-            """
-            # condition for successful placement
-            if len(placed) > threshold and not self.can_place(strand, mask):
-                boards.add(frozenset(placed))
-                return
-
-            # recurse
-            if self.can_place(strand, mask):
-                mask_copy = mask.copy() # don't want to mutate mask state
-                self.place(strand, mask_copy)
-                placed_new = placed + (strand,)
-                for strand_new in top_50:
-                    if strand_new in placed_new:
-                        continue
-                    placer_dfs(strand_new, placed_new, mask_copy, threshold)
-      
-        for strand in top_50:
-            placer_dfs(strand, (strand,), mask, threshold)
-
-        return frozenset(boards)
-    
-
-    def greedy_place(self, 
-                     boards: frozenset[frozenset[HashStrand]]) -> list[dict[str,
-                                                                HashStrand]]:
-        """
-        Attempt to fit remaining strands to partial boards. Use strategy of
-        placing as much of the filtered words in the board, and then check
-        if board is full. If not, pop one of the original members and try 
-        again. Each word that can get placed will be noted. 
-        """
-        # set up collectors
-
-        all_words = self.filtered
-        boards_new = set(boards)
-        placeable = set()
-        better_boards: list[list[HashStrand]] = []
-
-        # go through boards once, try to place words that can still be placed
-        for board in boards_new:
-            mask = self.create_mask(board)
-            board_lst = list(board)
-            for strand in all_words:
-                if self.can_place(strand, mask):
-                    self.place(strand, mask)
-                    board_lst.append(strand)
-                    placeable.add(strand)
-            if mask.is_full() or len(board_lst) > 6: # threshold for good place
-                better_boards.append(board_lst)
-
-        # return the better boards and the other words that can be placed
-        result = []
-        for board_n in better_boards:
-            dct = {}
-            for strand in board_n:
-                word = self.board.evaluate_strand(strand)
-                dct[word] = strand
-            result.append(dct)
-
-        return result
-
-    def show_general_result(self) -> list[dict[str, HashStrand]]:
+    def show_general_result(self) -> List[Dict[str, HashStrand]]:
         """
         Function that obtains current result from using the general solver.
         """
-        raw = self.all_words()
-        sorts = self.sort_words(raw)
-        placed = self.place_top_50(sorts, 6)
-        ans = self.greedy_place(placed)
+        raw_words = self.all_words()
+        sorted_strands = self.sort_words(raw_words)
+        
+        # Limit the number of strands to keep it manageable for DLX
+        candidate_strands = sorted_strands[:200]
 
-        return ans
+        solutions = self.solve_with_dlx(candidate_strands)
+        
+        result = []
+        for sol in solutions:
+            dct = {}
+            for strand in sol:
+                word = self.board.evaluate_strand(strand)
+                dct[word] = strand
+            result.append(dct)
+            
+        return result
 
     def show_answers_given_result(self) -> dict[str, 
                             tuple[tuple[int, int], list[tuple[int, int]]]]:
@@ -603,18 +494,191 @@ raw: dict[str, tuple[tuple[int, int], tuple[Step, ...]]]) -> list[HashStrand]:
             open(outfile, "w", encoding="utf-8") as new:
 
             old_lines = old.readlines()
-            for line in old_lines[:10]:
+            # Find the end of the board section
+            board_end_index = 0
+            for i, line in enumerate(old_lines):
+                if line.strip() == "":
+                    board_end_index = i
+                    break
+            
+            for line in old_lines[:board_end_index+1]:
                 new.write(line)
 
-            new.write("\nSolved Answers:\n")
-            for key in answers:
-                s1 = str(answers[key][0])
-                spce = 12 - len(key)
+            new.write("\n")
+            for key, value in answers.items():
+                start_pos, steps_list = value
+                r, c = start_pos
+                # Convert steps back to string format
+                steps_str = " ".join([s.value for s in self.get_answer_strands(self.convert_to_strand(self.all_words()))[key].steps])
+                new.write(f"{key} {r+1} {c+1} {steps_str}\n")
 
-                steps = ""
-                for tup in answers[key][1]:
-                    steps += str(tup) + " "
-                new.write(key + " " * spce + s1 +  " " + steps +"\n")
+    def find_spangrams(self, strands: List[HashStrand]) -> List[HashStrand]:
+        """
+        Identifies strands that are potential spangrams.
+        A spangram touches two opposite edges of the board.
+        """
+        spangrams = []
+        for strand in strands:
+            positions = strand.positions()
+            rows = {pos.r for pos in positions}
+            cols = {pos.c for pos in positions}
+
+            touches_top = 0 in rows
+            touches_bottom = (self.rows - 1) in rows
+            touches_left = 0 in cols
+            touches_right = (self.cols - 1) in cols
+
+            if (touches_top and touches_bottom) or \
+               (touches_left and touches_right):
+                spangrams.append(strand)
+        return spangrams
+
+    def get_theme_similarity(self, word: str) -> float:
+        """
+        Calculates the semantic similarity between a word and the game's theme.
+        """
+        theme_doc = self.nlp(self.game_theme.replace("-", " "))
+        word_doc = self.nlp(word)
+        if not word_doc.has_vector or not theme_doc.has_vector or word_doc.vector_norm == 0 or theme_doc.vector_norm == 0:
+            return 0.0
+        return theme_doc.similarity(word_doc)
+
+    def solve_with_dlx(self, strands: List[HashStrand]) -> List[List[HashStrand]]:
+        """
+        Solves the exact cover problem using DLX.
+        """
+        universe = {(r, c) for r in range(self.rows) for c in range(self.cols)}
+        subsets = {s: {(p.r, p.c) for p in s.positions()} for s in strands}
+
+        dlx = DLX(universe, subsets)
+        solutions = dlx.solve()
+
+        return solutions
+
+
+class DLXNode:
+    "A node for the Dancing Links algorithm."
+    def __init__(self, name: any = None):
+        self.name = name
+        self.left = self
+        self.right = self
+        self.up = self
+        self.down = self
+        self.column = self
+
+class DLX:
+    "Knuth's Algorithm X solver using Dancing Links."
+    def __init__(self, universe: Set, subsets: Dict[any, Set]):
+        self.header = self._create_matrix(universe, subsets)
+        self.solutions = []
+
+    def _create_matrix(self, universe, subsets):
+        header = DLXNode("header")
+        
+        columns = {}
+        for item in sorted(list(universe)):
+            col_node = DLXNode(item)
+            col_node.right = header
+            col_node.left = header.left
+            header.left.right = col_node
+            header.left = col_node
+            columns[item] = col_node
+
+        for subset_name, subset_items in subsets.items():
+            first_node_in_row = None
+            for item in sorted(list(subset_items)):
+                if item in columns:
+                    col_node = columns[item]
+                    new_node = DLXNode(subset_name)
+                    
+                    new_node.down = col_node
+                    new_node.up = col_node.up
+                    col_node.up.down = new_node
+                    col_node.up = new_node
+                    new_node.column = col_node
+                    
+                    if first_node_in_row is None:
+                        first_node_in_row = new_node
+                    else:
+                        new_node.right = first_node_in_row
+                        new_node.left = first_node_in_row.left
+                        first_node_in_row.left.right = new_node
+                        first_node_in_row.left = new_node
+        return header
+
+    def solve(self) -> List[List[any]]:
+        self.solutions = []
+        self._search(self.header, [])
+        return self.solutions
+
+    def _search(self, header, partial_solution):
+        if header.right == header:
+            self.solutions.append(list(partial_solution))
+            return
+
+        c = self._choose_column(header)
+        self._cover(c)
+
+        r = c.down
+        while r != c:
+            partial_solution.append(r.name)
+            
+            j = r.right
+            while j != r:
+                self._cover(j.column)
+                j = j.right
+            
+            self._search(header, partial_solution)
+            
+            partial_solution.pop()
+            j = r.left
+            while j != r:
+                self._uncover(j.column)
+                j = j.left
+            
+            r = r.down
+        
+        self._uncover(c)
+
+    def _choose_column(self, header):
+        min_size = float('inf')
+        chosen_col = None
+        c = header.right
+        while c != header:
+            size = 0
+            r = c.down
+            while r != c:
+                size += 1
+                r = r.down
+            if size < min_size:
+                min_size = size
+                chosen_col = c
+            c = c.right
+        return chosen_col
+
+    def _cover(self, c):
+        c.right.left = c.left
+        c.left.right = c.right
+        i = c.down
+        while i != c:
+            j = i.right
+            while j != i:
+                j.down.up = j.up
+                j.up.down = j.down
+                j = j.right
+            i = i.down
+
+    def _uncover(self, c):
+        i = c.up
+        while i != c:
+            j = i.left
+            while j != i:
+                j.down.up = j
+                j.up.down = j
+                j = j.left
+            i = i.up
+        c.right.left = c
+        c.left.right = c
 
 if __name__ == "__main__":
     cmd()
