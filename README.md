@@ -1,11 +1,3 @@
-# CMSC 14200 Course Project
-
-Team members:
-- GUI: James Rosenberger (jmrosenberger)
-- TUI: Anna Sokolova (annsok0l)
-- Art: Caden Tebow (ctebow)
-- QA:  Derrick Young (dvyoung)
-
 ### Enhancements:
 
 ### GUI-SOUND:
@@ -45,52 +37,6 @@ In Show mode, the TUI now clearly shows all the correct answers, highlights what
 
 ### TUI-SPECIAL:
 We gave the TUI more visuals —colors for selections, found words, and hint letters.
-
-### Revisions:
-
-### Game Logic: 
-The rubric item description was "Issue with hint feature.
-See code comment(s)." The code comment was as follows, by line 399 of the
-src/strands file:
-
-[Code Quality] implementation maintains the hint state even after it's
-been used but should return "No hint yet" whenever the hint meter
-is below the threshold, regardless of the current hint state.
-The current implementation is giving precedence to the "Use your current hint"
-message even when the hint meter is below the threshold.
-The boolean flag used to maintain the hint state may not be
-properly reset when strands are successfully
-submitted. 
-
-To fix this, we first added a conditional (see NEW LOGIC comment
-at the start of use_hints that checks before performing
-the use_hint logic if the current hint_word has already been guessed,
-and, if so, resets the hint state. This ensures
-the hint state is always reset, on top of what is already present
-in submit_strands. Beyond this, below in use_hint,
-(see other NEW LOGIC comment), I modify another conditional so that
-"No hint yet" is read whenever the hint meter is below the threshold,
-irrespective of the hint state, as desired. Along with a small GUI
-fix (marked by NEW LOGIC) so that any h key press would trigger self.handle_hint_conditions()
-instead of only ones above the hint threshold, this solves all the problems. 
-
-### GUI: This component received two S scores in Milestone 2.
-
-### TUI: Milestone 1: SS Milestone 2: NS
-
-Built the full text-based interface with play and show modes
-Fixed hint logic so hints only show when ready and reset properly after use
-Added clear input handling for submitting strands with helpful error messages
-Used colors to highlight found words, hints, and selections for better clarity
-Improved game info display (theme, hints, found words) and screen refreshing
-Added docstrings and comments for easier understanding
-
-### Art: This component received two S scores in Milestone 2. There was an instructor comment
-on adding docstrings for various student-created functions and classes, which has been 
-resolved by adding docstrings to functions where there were no docstrings previously. 
-
-### QA: Milestone 1: SS Milestone 2: NS
-Ensured use_hint() behavior is tested properly accross different hint thresholds.
 Replaced unordered set comparisons with ordered lists to verify word submission matches the same
 order of the expected.
 
